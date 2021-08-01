@@ -36,6 +36,9 @@
 (use-package org-roam
   :diminish org-roam-mode)
 
+(use-package use-package-ensure-system-package
+  :ensure t)
+
 (use-package diminish
   :init
   (diminish 'projectile-mode
@@ -57,9 +60,14 @@
             (lambda () (run-hooks 'prelude-cider-repl-mode-hook))))
 
 (use-package clojure-mode
+  :ensure-system-package
+  (clojure-lsp . clojure-lsp/brew/clojure-lsp-native)
   :config
   (setq nrepl-log-messages t)
   (setq prelude-clojure-mode-hook 'prelude-clojure-mode-defaults)
+  :hook ((clojure-mode . lsp)
+         (clojurescript-mode . lsp)
+         (clojurec-mode . lsp))
   :init
   (add-hook 'clojure-mode-hook (lambda ()
                                  (run-hooks 'prelude-clojure-mode-hook))))
@@ -67,7 +75,14 @@
 (use-package request)
 (use-package markdown-mode)
 (use-package magit)
-(use-package lsp-mode)
+(use-package lsp-mode
+  :config
+  (setq gc-cons-threshold 100000000
+      read-process-output-max (* 1024 1024)
+      treemacs-space-between-root-nodes nil
+      company-minimum-prefix-length 1
+      lsp-lens-enable t
+      lsp-signature-auto-activate nil))
 (use-package lsp-treemacs)
 (use-package hydra)
 (use-package zop-to-char) ;; TODO: configure this
@@ -114,10 +129,7 @@
   (setq projectile-cache-file (expand-file-name  "projectile.cache" prelude-savefile-dir))
   :init
   (projectile-mode +1))
-(use-package perspective)
 (use-package package-lint)
-(use-package operate-on-number) ;; TODO: Learn me
-;;; (straight-use-package 'smartrep)
 (use-package ob-go)
 (use-package lsp-ui)
 ;;; (straight-use-package 'kubernetes)
@@ -213,7 +225,7 @@
   (global-diff-hl-mode +1)
   (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
   (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
-(use-package deft)
+
 (use-package csv-mode)
 (use-package crux)
 (use-package counsel
@@ -495,10 +507,6 @@
 (setenv "GOPATH" "/Users/zromero/go")
 (setenv "GOBIN" "/Users/zromero/go/bin")
 
-;; related to lsp performance
-(setq gc-cons-threshold 100000000)
-(setq read-process-output-max (* 1024 1024))
-
 ;; frame display config
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
@@ -589,13 +597,21 @@
 
 ;; youtube.el
 
+(use-package perspective
+  :bind (("C-x C-b" . persp-list-buffers)
+         ("C-x b" . persp-switch-to-buffer*)
+         ("C-x k" . persp-kill-buffer*))
+;;  :hook (kill-emacs . persp-save-state)
+  :config
+  (setq persp-sort 'created
+        persp-state-default-file (concat user-emacs-directory "persp-save-file"))
+  :init
+  (persp-mode t))
 
 ;; (require 'perspective)
-;; (persp-mode)
 ;; (global-set-key (kbd "C-x C-b") #'persp-list-buffers)
 ;; (global-set-key (kbd "C-x b") #'persp-switch-to-buffer*)
 ;; (global-set-key (kbd "C-x k") #'persp-kill-buffer*)
-;; (setq persp-sort 'created)
 ;; (add-hook 'kill-emacs-hook #'persp-state-save)
 
 (defun prelude-cider-repl-mode-defaults ()
@@ -656,7 +672,7 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 (load "~/.emacs.d/init-elisp.el")
 (load "~/.emacs.d/init-go.el")
 (load "~/.emacs.d/init-js.el")
-(add-to-list 'load-path "/Users/zromero/dev/emacs/mu-1.6.1/mu4e/")
+(add-to-list 'load-path (concat my/home-directory "/dev/emacs/mu-1.6.1/mu4e"))
 (load "~/.emacs.d/init-mu4e.el")
 
 (require 'init-org)

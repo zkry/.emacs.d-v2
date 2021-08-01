@@ -21,27 +21,34 @@
 
 (setq org-roam-v2-ack t)
 
-(defvar zr/org-directory "~/Dropbox/org/")
+(defvar zr/org-directory "/Users/zromero/Dropbox/org/")
+
+(defun zr/org-file (path)
+  (concat zr/org-directory path))
+
+(defvar zr/refile-file (zr/org-file "refile.org"))
+(defvar zr/notes-file (zr/org-file "notesV2.org"))
+(defvar zr/organizer-file (zr/org-file "organizerV2.org"))
 
 (defun zr/open-init ()
   (interactive)
-  (find-file "~/.emacs.d/personal/init.el"))
+  (find-file "~/.emacs.d/init.el"))
 
 (defun zr/open-refile ()
   (interactive)
-  (find-file (concat zr/org-directory "refile.org")))
+  (find-file zr/refile-file))
 
 (defun zr/open-organizer ()
   (interactive)
-  (find-file (concat zr/org-directory "organizerV2.org")))
+  (find-file zr/organizer-file))
 
 (defun zr/open-notes ()
   (interactive)
-  (find-file (concat zr/org-directory "notesV2.org")))
+  (find-file zr/notes-file))
 
 (defun zr/til ()
   (interactive)
-  (find-file (concat zr/org-directory "notesV2.org"))
+  (find-file zr/notes-file)
   (goto-char (point-min))
   (search-forward "* TIL")
   (insert (format "\n** %s " (format-time-string "%d-%m-%Y"))))
@@ -163,18 +170,16 @@
       '((sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d)" "FROZEN(f)" "CANCELLED(c)")))
 
 (setq org-capture-templates
-      '(("t" "Todo" entry (file "~/Dropbox/org/refile.org")
+      '(("t" "Todo" entry (file zr/refile-file)
          "* TODO %?\n  %i\n  %a")
-        ("n" "Note" entry (file "~/Dropbox/org/refile.org")
+        ("n" "Note" entry (file zr/refile-file)
          "* %?\n  %i\n  %a")
-        ("l" "Today I Learned" entry (file+headline "~/Dropbox/org/notesV2.org" "TIL")
+        ("l" "Today I Learned" entry (file+headline zr/notes-file "TIL")
          "** %<%d-%m-%Y> %?\n" :prepend t)
-        ("j" "Journal Entry" entry (file+headline "~/Dropbox/org/notesV2.org" "Journal")
+        ("j" "Journal Entry" entry (file+headline zr/notes-file "Journal")
          "** %<%d-%m-%Y> %?\n" :prepend t)
-        ("r" "+ Reading/Watching list" entry (file+headline "~/Dropbox/org/organizerV2.org" "Reading/Watching List")
-         "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")
-        ("a" "Travel Audience Learn" entry (file+headline "~/Dropbox/org/ta.org" "Problems Solved Log")
-         "** %<%d/%m> %?\n  %i\n  %a" :prepend t)))
+        ("r" "+ Reading/Watching list" entry (file+headline zr/organizer-file "Reading/Watching List")
+         "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")))
 
 (setq org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-global-properties (quote (("STYLE_ALL" . "habit pi"))))
@@ -187,8 +192,8 @@
 (setq org-clock-persist 'history)
 (org-clock-persistence-insinuate)
 
-(setq org-agenda-files (list "~/Dropbox/org/organizerV2.org" "~/Dropbox/org/tickler.org"))
-(setq org-default-notes-file "~/Dropbox/org/refile.org")
+(setq org-agenda-files (list zr/organizer-file (zr/org-file "tickler.org")))
+(setq org-default-notes-file zr/refile-file)
 
 (add-hook 'org-mode-hook
           (lambda ()
@@ -299,7 +304,7 @@
 (setq org-id-link-to-org-use-id t)
 
 (require 'org-roam)
-(setq org-roam-directory "/Users/zromero/Dropbox/org/roam")
+(setq org-roam-directory (zr/org-file "roam"))
 (org-roam-setup)
 (global-set-key (kbd "C-c n l") #'org-roam-buffer-toggle)
 (global-set-key (kbd "C-c n f") #'org-roam-node-find)
@@ -322,17 +327,19 @@
 (define-key org-roam-mode-map (kbd "C-c n j") #'org-journal-new-entry)
 (setq org-journal-date-prefix "#+title: "
       org-journal-file-format "%Y-%m-%d.org"
-      org-journal-dir "/Users/zromero/Dropbox/org/roam/daily/"
+      org-journal-dir (zr/org-file "roam/daily/")
       org-journal-date-format "%A, %d %B %Y"
       org-journal-time-prefix  "** ")
 
-(require 'deft)
-(define-key org-roam-mode-map (kbd "C-c n d") #'deft)
-(setq deft-recursive t
+(use-package deft
+  :bind
+  (:map org-roam-mode-map
+   ("C-c n d" . deft))
+  :config
+  (setq deft-recursive t
       deft-use-filter-string-for-filename t
       deft-default-extension "org"
-      deft-directory "/Users/zromero/Dropbox/org/roam")
-
+      deft-directory (zr/org-file "roam")))
 
 (provide 'init-org)
 
