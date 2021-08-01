@@ -82,7 +82,8 @@
       treemacs-space-between-root-nodes nil
       company-minimum-prefix-length 1
       lsp-lens-enable t
-      lsp-signature-auto-activate nil))
+      lsp-signature-auto-activate nil
+      lsp-ui-sideline-enable nil))
 (use-package lsp-treemacs)
 (use-package hydra)
 (use-package zop-to-char) ;; TODO: configure this
@@ -537,8 +538,8 @@
 (global-set-key (kbd "<C-M-backspace>") #'sp-splice-sexp-killing-backward)
 (global-set-key (kbd "C-M-]") #'sp-rewrap-sexp)
 (global-set-key (kbd "C-M-SPC") #'sp-mark-sexp)
-
 (global-set-key (kbd "s-k") #'crux-kill-whole-line)
+(global-set-key (kbd "s-d") #'crux-delete-file-and-buffer)
 
 (global-set-key (kbd "C-c a") #'org-agenda)
 ;; C-c b org-switchb
@@ -601,7 +602,7 @@
   :bind (("C-x C-b" . persp-list-buffers)
          ("C-x b" . persp-switch-to-buffer*)
          ("C-x k" . persp-kill-buffer*))
-;;  :hook (kill-emacs . persp-save-state)
+  :hook (kill-emacs . persp-save-state)
   :config
   (setq persp-sort 'created
         persp-state-default-file (concat user-emacs-directory "persp-save-file"))

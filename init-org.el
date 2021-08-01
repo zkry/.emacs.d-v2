@@ -304,6 +304,12 @@
 (setq org-id-link-to-org-use-id t)
 
 (require 'org-roam)
+(add-to-list 'display-buffer-alist
+                  '("\\*org-roam\\*"
+                    (display-buffer-in-direction)
+                    (direction . right)
+                    (window-width . 0.33)
+                    (window-height . fit-window-to-buffer)))
 (setq org-roam-directory (zr/org-file "roam"))
 (org-roam-setup)
 (global-set-key (kbd "C-c n l") #'org-roam-buffer-toggle)
@@ -312,12 +318,13 @@
 (global-set-key (kbd "C-c n i") #'org-roam-node-insert)
 (global-set-key (kbd "C-c n c") #'org-roam-capture)
 (global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
+(global-set-key (kbd "C-c n d") #'deft)
 
 (define-key org-mode-map (kbd "C-c n i") #'org-roam-insert)
 (define-key org-mode-map (kbd "C-c n I") #'org-roam-insert-immediate)
-(define-key org-roam-mode-map (kbd "C-c n a t") #'org-roam-dailies-today)
-(define-key org-roam-mode-map (kbd "C-c n a y") #'org-roam-dailies-yesterday)
-(define-key org-roam-mode-map (kbd "C-c n a m") #'org-roam-dailies-tomorrow)
+(define-key org-roam-mode-map (kbd "C-c n a t") #'org-roam-dailies-capture-today)
+(define-key org-roam-mode-map (kbd "C-c n a y") #'org-roam-dailies-capture-yesterday)
+(define-key org-roam-mode-map (kbd "C-c n a m") #'org-roam-dailies-capture-tomorrow)
 (define-key org-roam-mode-map (kbd "C-c n a w") #'org-roam-dailies-capture-this-week)
 (define-key org-roam-mode-map (kbd "C-c n l") #'org-roam)
 (define-key org-roam-mode-map (kbd "C-c n f") #'org-roam-find-file)
@@ -336,10 +343,15 @@
   (:map org-roam-mode-map
    ("C-c n d" . deft))
   :config
-  (setq deft-recursive t
-      deft-use-filter-string-for-filename t
-      deft-default-extension "org"
-      deft-directory (zr/org-file "roam")))
+  (setq deft-directory (zr/org-file "roam"))
+  (setq deft-use-filename-as-title t)
+  (setq deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n#\\+title:")
+  :custom
+       (deft-recursive t)
+       (deft-use-filter-string-for-filename t)
+       (deft-default-extension "org")
+       (deft-directory org-roam-directory))
+
 
 (provide 'init-org)
 
