@@ -673,6 +673,8 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 (load "~/.emacs.d/init-elisp.el")
 (load "~/.emacs.d/init-go.el")
 (load "~/.emacs.d/init-js.el")
+(when (load "~/.emacs.d/init-private.el" t)
+  (require 'init-private))
 (add-to-list 'load-path (concat my/home-directory "/dev/emacs/mu-1.6.1/mu4e"))
 (load "~/.emacs.d/init-mu4e.el")
 
@@ -696,7 +698,6 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
    '("ea5822c1b2fb8bb6194a7ee61af3fe2cc7e2c7bab272cbb498a0234984e1b2d9" "d0fa4334234e97ece3d72d86e39a574f8256b4a8699a1fb5390c402892a1c024" default))
  '(debug-on-error t)
  '(geiser-default-implementation 'mit)
- '(ivy-youtube-key "AIzaSyAU3TcMs0Hm28E3SAzcUHVEJBDmRpFFfpo")
  '(org-display-remote-inline-images 'cache)
  '(org-duration-units
    '(("min" . 1)
