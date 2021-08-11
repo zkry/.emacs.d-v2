@@ -181,6 +181,7 @@
         ("r" "+ Reading/Watching list" entry (file+headline zr/organizer-file "Reading/Watching List")
          "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")))
 
+(setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-global-properties (quote (("STYLE_ALL" . "habit pi"))))
 

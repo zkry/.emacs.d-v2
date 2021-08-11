@@ -86,7 +86,9 @@
       lsp-ui-sideline-enable nil))
 (use-package lsp-treemacs)
 (use-package hydra)
-(use-package zop-to-char) ;; TODO: configure this
+(use-package zop-to-char
+  :init
+  (global-set-key [remap zap-to-char] 'zop-to-char)) ;; TODO: configure this
 (use-package yasnippet
   :diminish yas-minor-mode
   :init
@@ -103,7 +105,7 @@
 
 (use-package turkish)
 (use-package swiper
-  :bind (("C-s" . swiper)))
+  :bind (("C-s" . sоwiper)))
 (use-package super-save
   :config
   (add-to-list 'super-save-triggers 'ace-window)
@@ -512,14 +514,19 @@
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
 
-(use-package whitespace
-  :diminish whitespace-mode
-  :config
-  (setq whitespace-line-column 80)
-  :init
-  (whitespace-mode 1)
-  (setq-default tab-width 4)
-  (setq-default whitespace-style '(face tabs empty trailing lines-tail)))
+
+;; whitespace mode
+(defvar zr/clean-whitespace-on-save t)
+(defun zr/cleanup-maybe ()
+  (when zr/clean-whitespace-on-save
+    (whitespace-cleanup)))
+
+(diminish 'whitespace-mode)
+(setq whitespace-line-column 80)
+(setq-default tab-width 4)
+(setq-default whitespace-style '(face tabs empty trailing lines-tail))
+(whitespace-mode 1)
+(add-hook 'before-save-hook 'zr/cleanup-maybe nil t)
 
 ;; (diminish 'intentional-minor-mode)
 ;; TODO - Install Intentional
@@ -626,7 +633,7 @@
 ;; (global-set-key (kbd "C-c a") 'counsel-ag)
 ;; (global-set-key (kbd "C-x l") 'counsel-locate)
 
-;;; Advice 
+;;; Advice
 (defadvice set-buffer-major-mode (after set-major-mode activate compile)
   "Set buffer major mode according to `auto-mode-alist'."
   (let* ((name (buffer-name buffer))
