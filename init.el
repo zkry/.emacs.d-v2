@@ -105,7 +105,7 @@
 
 (use-package turkish)
 (use-package swiper
-  :bind (("C-s" . sоwiper)))
+  :bind (("C-s" . swiper)))
 (use-package super-save
   :config
   (add-to-list 'super-save-triggers 'ace-window)
@@ -157,7 +157,11 @@
               (ibuffer-projectile-set-filter-groups)
               (unless (eq ibuffer-sorting-mode 'alphabetic)
                 (ibuffer-do-sort-by-alphabetic)))))
-(use-package hyperbole)
+(use-package hyperbole
+  ;;:config
+  ;;(require 'hyperbole)
+  ;;:bind (("<M-return>" . hkey-either))
+  )
 (use-package html-to-hiccup)
 (use-package hl-todo)
 (use-package graphql-mode)
@@ -330,6 +334,23 @@
           ("clojure" ("clojure"))))
   (setq intentional-save-to-journal nil)
   (setq intentional-extract-clock-body-urls t))
+
+;; Experimental
+
+(use-package dogears
+  :straight (dogears :type git :host github :repo "alphapapa/dogears.el")
+  :init
+  (dogears-mode)
+  ;; These bindings are optional, of course:
+  :bind (:map global-map
+              ("M-g d" . dogears-go)
+              ("M-g M-b" . dogears-back)
+              ("M-g M-f" . dogears-forward)
+              ("M-g M-d" . dogears-list)
+              ("M-g M-D" . dogears-sidebar)))
+
+;; Personal
+
 (use-package youtube
   :straight (youtube :type git :host github :repo "zkry/youtube.el")
   :config
@@ -340,6 +361,10 @@
   :straight (time-table :type git :host github :repo "zkry/time-table"))
 (use-package yaml
   :straight (yaml :type git :host github :repo "zkry/yaml.el"))
+(use-package ag-plus
+  :straight (ag-plus :type git :host github :repo "zkry/ag-plus.el")
+  :hook (ag-mode . ag-plus-mode))
+
 
 (defun prelude-clojure-mode-defaults ()
     (subword-mode +1))
@@ -510,6 +535,7 @@
 (setenv "GOPATH" "/Users/zromero/go")
 (setenv "GOBIN" "/Users/zromero/go/bin")
 
+
 ;; frame display config
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
 (add-to-list 'default-frame-alist '(ns-appearance . dark))
@@ -534,6 +560,9 @@
 ;; keybindings
 (global-set-key (kbd "C-c p") #'projectile-command-map)
 
+
+(global-set-key (kbd "C-h C-f") #'find-function)
+
 (global-set-key (kbd "C-§ i") #'zr/open-init)
 (global-set-key (kbd "C-§ o") #'zr/open-organizer)
 (global-set-key (kbd "C-§ n") #'zr/open-notes)
@@ -547,6 +576,7 @@
 (global-set-key (kbd "C-M-SPC") #'sp-mark-sexp)
 (global-set-key (kbd "s-k") #'crux-kill-whole-line)
 (global-set-key (kbd "s-d") #'crux-delete-file-and-buffer)
+
 
 (global-set-key (kbd "C-c a") #'org-agenda)
 ;; C-c b org-switchb
