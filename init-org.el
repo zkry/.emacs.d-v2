@@ -321,16 +321,6 @@
 (global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
 (global-set-key (kbd "C-c n d") #'deft)
 
-(define-key org-mode-map (kbd "C-c n i") #'org-roam-insert)
-(define-key org-mode-map (kbd "C-c n I") #'org-roam-insert-immediate)
-(define-key org-roam-mode-map (kbd "C-c n a t") #'org-roam-dailies-capture-today)
-(define-key org-roam-mode-map (kbd "C-c n a y") #'org-roam-dailies-capture-yesterday)
-(define-key org-roam-mode-map (kbd "C-c n a m") #'org-roam-dailies-capture-tomorrow)
-(define-key org-roam-mode-map (kbd "C-c n a w") #'org-roam-dailies-capture-this-week)
-(define-key org-roam-mode-map (kbd "C-c n l") #'org-roam)
-(define-key org-roam-mode-map (kbd "C-c n f") #'org-roam-find-file)
-(define-key org-roam-mode-map (kbd "C-c n g") #'org-roam-graph)
-
 (require 'org-journal)
 (define-key org-roam-mode-map (kbd "C-c n j") #'org-journal-new-entry)
 (setq org-journal-date-prefix "#+title: "

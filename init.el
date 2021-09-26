@@ -234,7 +234,9 @@
   (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
 
 (use-package csv-mode)
-(use-package crux)
+(use-package crux
+  :bind
+  (("C-a" . crux-move-beginning-of-line)))
 (use-package counsel
   :bind
   (("M-x" . counsel-M-x)
@@ -364,6 +366,7 @@
 (use-package ag-plus
   :straight (ag-plus :type git :host github :repo "zkry/ag-plus.el")
   :hook (ag-mode . ag-plus-mode))
+(use-package restclient)
 
 
 (defun prelude-clojure-mode-defaults ()
@@ -635,16 +638,16 @@
 
 ;; youtube.el
 
-(use-package perspective
-  :bind (("C-x C-b" . persp-list-buffers)
-         ("C-x b" . persp-switch-to-buffer*)
-         ("C-x k" . persp-kill-buffer*))
-  :hook (kill-emacs . persp-save-state)
-  :config
-  (setq persp-sort 'created
-        persp-state-default-file (concat user-emacs-directory "persp-save-file"))
-  :init
-  (persp-mode t))
+;; (use-package perspective
+;;   :bind (("C-x C-b" . persp-list-buffers)
+;;          ("C-x b" . persp-switch-to-buffer*)
+;;          ("C-x k" . persp-kill-buffer*))
+;;   ;; :hook (kill-emacs . persp-save-state)
+;;   :config
+;;   (setq persp-sort 'created
+;;         persp-state-default-file (concat user-emacs-directory "persp-save-file"))
+;;   :init
+;;   (persp-mode t))
 
 ;; (require 'perspective)
 ;; (global-set-key (kbd "C-x C-b") #'persp-list-buffers)
