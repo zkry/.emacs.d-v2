@@ -306,6 +306,33 @@
   (setq awqat-isha-angle -16.3)
   (setq awqat-prayer-safety-offsets
         '(0.0 0.0 7.0 -9.0 0.0 0.0)))
+
+(use-package wat-mode
+  :straight (wat-mode :type git :host github :repo "devonsparks/wat-mode"))
+
+(use-package typescript-mode)
+(use-package web-mode)
+;; (use-package tree-sitter)
+;; (use-package tree-sitter-langs)
+
+;; (define-derived-mode typescript-tsx-mode typescript-mode "tsx")
+;; (add-hook 'typescript-tsx-mode-hook #'tree-sitter-hl-mode)
+;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-tsx-mode . tsx))
+;; (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescript-tsx-mode))
+
+;; (add-hook
+;;  'typescript-mode-hook
+;;  (lambda ()
+;;    (setq-local font-lock-defaults '(()))
+;;    (tree-sitter-hl-mode 1)))
+
+;; and
+
+;; (tree-sitter-require 'tsx)
+;; (add-to-list
+;;  'tree-sitter-major-mode-language-alist
+;;  '(typescript-mode . tsx))
+
 (use-package intentional
   :straight (intentional :type git :host github :repo "zkry/intentional.el")
   :config
@@ -620,6 +647,10 @@
 ;; C-c $ flyspell-correct-word-before-point
 ;; C-c TAB crux-indent-rigidly-and-copy-to-clipboard
 ;; C-c . ... apply-operation-to-number-at-point
+
+(global-set-key (kbd "C-'") #'avy-goto-char-2)
+(global-set-key (kbd "M-g f") #'avy-goto-line)
+(global-set-key (kbd "M-g w") #'avy-goto-word-1)
 
 (setq auth-sources '("~/.authinfo"))
 
