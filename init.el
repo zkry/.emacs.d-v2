@@ -44,9 +44,47 @@
   (diminish 'projectile-mode
             '(:eval (format " Prj(%s)" (projectile-project-name)))))
 
+(use-package embark)
+
+(defun avy-action-embark (pt)
+  (unwind-protect
+      (save-excursion
+        (goto-char pt)
+        (embark-act))
+    (select-window
+     (cdr (ring-ref avy-ring 0))))
+  t)
+
+(defun avy-action-eval (pt)
+  (unwind-protect
+      (save-excursion
+        (goto-char pt)
+        (if (looking-at "(")
+            (sp-forward-sexp)
+          (sp-up-sexp))
+        (cond
+         ((equal mode-name "EL")
+          (eval-last-sexp nil))
+         ((equal mode-name "Clojure")
+          (cider-eval-last-sexp))))
+    (select-window
+     (cdr (ring-ref avy-ring 0))))
+  t)
+
 (use-package avy
   :config
   (setq avy-keys '(?a ?r ?s ?t ?d ?h ?n ?e ?i ?o))
+  (setq avy-dispatch-alist
+        '((?x . avy-action-kill-move)
+          (?X . avy-action-kill-stay)
+          (?p . avy-action-teleport)
+          (?m . avy-action-mark)
+          (?y . avy-action-yank)
+          (?Y . avy-action-yank-line)
+          (?l . avy-action-ispell)
+          (?z . avy-action-zap-to-char)
+          (?. . avy-action-embark)
+          (?v . avy-action-eval)))
   (setq avy-background t)
   (setq avy-style 'at-full))
 
