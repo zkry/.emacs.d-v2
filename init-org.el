@@ -149,6 +149,8 @@
       (goto-char (point-max))
       (insert "\n* plan.txt\n\n** Monday\n\n** Tuesday\n\n** Wednesday\n\n** Thursday\n\n** Friday\n\n** Saturday\n\n** Sunday"))))
 
+(defvar zr/current-month-planner-file "/Users/zromero/Dropbox/org/roam/20211231195829-january_2022.org")
+
 
 (defun zr/org-write-schedule ()
   "Write a schedule."
@@ -170,16 +172,13 @@
       '((sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d)" "FROZEN(f)" "CANCELLED(c)")))
 
 (setq org-capture-templates
-      '(("t" "Todo" entry (file zr/refile-file)
-         "* TODO %?\n  %i\n  %a")
-        ("n" "Note" entry (file zr/refile-file)
-         "* %?\n  %i\n  %a")
-        ("l" "Today I Learned" entry (file+headline zr/notes-file "TIL")
-         "** %<%d-%m-%Y> %?\n" :prepend t)
-        ("j" "Journal Entry" entry (file+headline zr/notes-file "Journal")
-         "** %<%d-%m-%Y> %?\n" :prepend t)
-        ("r" "+ Reading/Watching list" entry (file+headline zr/organizer-file "Reading/Watching List")
-         "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")))
+      '(("t" "Todo" checkitem (file+headline zr/current-month-planner-file "Daily Log")
+         "[ ] %?")
+        ("n" "Note" checkitem (file+headline zr/current-month-planner-file "Daily Log")
+         " %?")
+        ;; ("r" "+ Reading/Watching list" entry (file+headline zr/organizer-file "Reading/Watching List")
+        ;;  "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")
+        ))
 
 (setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM")
@@ -193,7 +192,9 @@
 (setq org-clock-persist 'history)
 (org-clock-persistence-insinuate)
 
-(setq org-agenda-files (list zr/organizer-file (zr/org-file "tickler.org")))
+(setq org-agenda-files (list zr/organizer-file
+                             (zr/org-file "tickler.org")
+                             zr/current-month-planner-file))
 (setq org-default-notes-file zr/refile-file)
 
 (add-hook 'org-mode-hook
@@ -320,6 +321,7 @@
 (global-set-key (kbd "C-c n c") #'org-roam-capture)
 (global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
 (global-set-key (kbd "C-c n d") #'deft)
+(define-key org-mode-map (kbd "C-'") nil)
 
 (require 'org-journal)
 (define-key org-roam-mode-map (kbd "C-c n j") #'org-journal-new-entry)

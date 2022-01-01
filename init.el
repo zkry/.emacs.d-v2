@@ -30,11 +30,26 @@
 
 (setq straight-use-package-by-default t)
 
+(use-package f)
+
 (use-package org
   :diminish org-table-header-line-mode)
 (setq org-roam-v2-ack t)
 (use-package org-roam
   :diminish org-roam-mode)
+(use-package org-roam-ui
+  :straight
+    (:host github :repo "org-roam/org-roam-ui" :branch "main" :files ("*.el" "out"))
+    :after org-roam
+;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
+;;         a hookable mode anymore, you're advised to pick something yourself
+;;         if you don't care about startup time, use
+;;  :hook (after-init . org-roam-ui-mode)
+    :config
+    (setq org-roam-ui-sync-theme t
+          org-roam-ui-follow t
+          org-roam-ui-update-on-save t
+          org-roam-ui-open-on-start t))
 
 (use-package use-package-ensure-system-package
   :ensure t)
@@ -655,9 +670,10 @@
 ;; C-c g prelude-google
 ;; C-c h
 ;; C-c i imenu-anywhere
+(global-set-key (kbd "C-c i") #'intentional)
 ;; C-c j counsel-git-grep
 ;; C-c k crux-kill-other-buffers
-;; C-c l org-store-link
+(global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c m") #'mu4e)
 ;; C-c n crux-cleanup-buffer-or-region
 ;; C-c o crux-open-with
@@ -817,11 +833,14 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
      ("y" . 525960.0)
      ("pom" . 25)))
  '(org-export-backends '(ascii beamer html icalendar latex md odt confluence))
+ '(org-latex-pdf-process
+   '("xelatex -interaction nonstopmode -output-directory %o %f"))
  '(org-modules
    '(ol-bbdb ol-bibtex ol-docview ol-eww ol-gnus org-habit ol-info ol-irc ol-mhe ol-rmail ol-w3m))
  '(org-table-header-line-p t)
  '(package-selected-packages
    '(clj-refactor perspective html-to-hiccup graphql package-lint racket-mode graphql-mode lsp-java f org-tree-slide deft org-journal org-download 2048-game ob-go ivy-youtube hyperbole alert ibuffer-projectile gnuplot gnuplot-mode forge kubernetes hy-mode csv-mode turkish elfeed lua-mode ample-theme ag scss-mode protobuf-mode flycheck-clj-kondo rjsx-mode groovy-mode org-pomodoro dockerfile-mode yasnippet yasnippet-snippets git-link yaml-mode geiser lsp-ui company-lsp json-mode js2-mode gotest go-projectile go-eldoc company-go go-mode rainbow-mode elisp-slime-nav cider clojure-mode rainbow-delimiters company counsel swiper ivy exec-path-from-shell zop-to-char zenburn-theme which-key volatile-highlights undo-tree super-save smartrep smartparens operate-on-number move-text magit projectile imenu-anywhere hl-todo guru-mode gitignore-mode gitconfig-mode git-timemachine gist flycheck expand-region epl editorconfig easy-kill diminish diff-hl discover-my-major crux browse-kill-ring beacon anzu ace-window))
+ '(reb-re-syntax 'read)
  '(safe-local-variable-values
    '((eval when
            (and
