@@ -149,9 +149,6 @@
       (goto-char (point-max))
       (insert "\n* plan.txt\n\n** Monday\n\n** Tuesday\n\n** Wednesday\n\n** Thursday\n\n** Friday\n\n** Saturday\n\n** Sunday"))))
 
-(defvar zr/current-month-planner-file "/Users/zromero/Dropbox/org/roam/20211231195829-january_2022.org")
-
-
 (defun zr/org-write-schedule ()
   "Write a schedule."
   (interactive)
@@ -172,9 +169,9 @@
       '((sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d)" "FROZEN(f)" "CANCELLED(c)")))
 
 (setq org-capture-templates
-      '(("t" "Todo" checkitem (file+headline zr/current-month-planner-file "Daily Log")
+      '(("t" "Todo" checkitem (file+headline zr/organizer-file "Daily Log")
          "[ ] %?")
-        ("n" "Note" checkitem (file+headline zr/current-month-planner-file "Daily Log")
+        ("n" "Note" checkitem (file+headline zr/organizer-file "Daily Log")
          " %?")
         ;; ("r" "+ Reading/Watching list" entry (file+headline zr/organizer-file "Reading/Watching List")
         ;;  "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")
@@ -193,8 +190,7 @@
 (org-clock-persistence-insinuate)
 
 (setq org-agenda-files (list zr/organizer-file
-                             (zr/org-file "tickler.org")
-                             zr/current-month-planner-file))
+                             (zr/org-file "tickler.org")))
 (setq org-default-notes-file zr/refile-file)
 
 (add-hook 'org-mode-hook
@@ -254,7 +250,7 @@
       (quote (("g" "GTD"
                ((agenda "" nil)
                 (tags-todo "gtd+assorted-@market-frozen"
-                           ((org-agenda-overriding-header "Assorted Tasks")
+                           ((org-agenda-overriding-header "Tasks Backlog")
                             (org-agenda-skip-function #'zac/org-skip-future-scheduled)))
                                         ;(tags-todo "gtd-assorted/NEXT"
                                         ;           ((org-agenda-overriding-header "Projects NEXT Tasks")
