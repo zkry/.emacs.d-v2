@@ -54,12 +54,12 @@
 (use-package use-package-ensure-system-package
   :ensure t)
 
+(use-package crdt)
+
 (use-package diminish
   :init
   (diminish 'projectile-mode
             '(:eval (format " Prj(%s)" (projectile-project-name)))))
-
-(use-package embark)
 
 (defun avy-action-embark (pt)
   (unwind-protect
@@ -157,8 +157,7 @@
 ;;; volatile-highlights ?
 
 (use-package turkish)
-(use-package swiper
-  :bind (("C-s" . swiper)))
+
 (use-package super-save
   :config
   (add-to-list 'super-save-triggers 'ace-window)
@@ -171,6 +170,7 @@
   (setq sp-autoskip-closing-pair 'always)
   (setq sp-hybrid-kill-entire-symbol nil)
   (sp-use-paredit-bindings)
+  (unbind-key (kbd "M-s") smartparens-mode-map)
   :init
   (smartparens-global-strict-mode t)
   (show-smartparens-global-mode +1)
@@ -191,17 +191,200 @@
 ;;; (straight-use-package 'kubernetes)
 (use-package json-mode)
 (use-package js2-mode)
-(use-package ivy
-  :diminish ivy-mode
-  :bind
-  (("C-c C-r" . ivy-resume)
-   ("<f6>" . ivy-resume))
-  :config
-  (ivy-mode 1)
-  (setq ivy-use-virtual-buffers t)
+
+(use-package vertico
   :init
-  (ivy-mode 1)
-  (setq projectile-completion-system 'ivy))
+  (vertico-mode))
+(use-package orderless  :init
+  (setq completion-styles '(orderless)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+(use-package savehist
+  :init
+  (savehist-mode))
+(use-package emacs
+  :init
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; Alternatively try `consult-completing-read-multiple'.
+  (defun crm-indicator (args)
+    (cons (concat "[CRM] " (car args)) (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+  ;; Vertico commands are hidden in normal buffers.
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t))
+(use-package marginalia
+  ;; Either bind `marginalia-cycle` globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
+
+(use-package consult
+  ;; Replace bindings. Lazily loaded due by `use-package'.
+  :bind (;; C-c bindings (mode-specific-map)
+         ("C-c h" . consult-history)
+         ;; ("C-c m" . consult-mode-command)
+         ("C-c k" . consult-kmacro)
+         ;; C-x bindings (ctl-x-map)
+         ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+         ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+         ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+         ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+         ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+         ;; Custom M-# bindings for fast register access
+         ("M-#" . consult-register-load)
+         ("M-'" . consult-register-store)          ;; orig. abbrev-prefix-mark (unrelated)
+         ("C-M-#" . consult-register)
+         ;; Other custom bindings
+         ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+         ("<help> a" . consult-apropos)            ;; orig. apropos-command
+         ;; M-g bindings (goto-map)
+         ("M-g e" . consult-compile-error)
+         ("M-g f" . consult-flycheck)               ;; Alternative: consult-flycheck
+         ("M-g g" . consult-goto-line)             ;; orig. goto-line
+         ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+         ("M-g o" . consult-org-heading)               ;; Alternative: consult-org-heading
+         ("M-g m" . consult-mark)
+         ("M-g k" . consult-global-mark)
+         ("M-g i" . consult-imenu)
+         ("M-g I" . consult-imenu-multi)
+         ;; M-s bindings (search-map)
+         ("M-s d" . consult-find)
+         ("M-s D" . consult-locate)
+         ("M-s g" . consult-grep)
+         ("M-s G" . consult-git-grep)
+         ("M-s r" . consult-ripgrep)
+         ("C-s" . consult-line)
+         ("M-s L" . consult-line-multi)
+         ("M-s m" . consult-multi-occur)
+         ("M-s k" . consult-keep-lines)
+         ("M-s u" . consult-focus-lines)
+         ;; Isearch integration
+         ("M-s e" . consult-isearch-history)
+         :map isearch-mode-map
+         ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+         ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+         ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+         ("C-s" . consult-line)
+         ("M-s L" . consult-line-multi)
+         :map lsp-mode-map
+         ("s-l s" . consult-lsp-symbols)
+         ("s-l S" . consult-lsp-file-symbols))
+
+  
+  ;; Enable automatic preview at point in the *Completions* buffer. This is
+  ;; relevant when you use the default completion UI. You may want to also
+  ;; enable `consult-preview-at-point-mode` in Embark Collect buffers.
+  :hook (completion-list-mode . consult-preview-at-point-mode)
+
+  ;; The :init configuration is always executed (Not lazy)
+  :init
+
+  ;; Optionally configure the register formatting. This improves the register
+  ;; preview for `consult-register', `consult-register-load',
+  ;; `consult-register-store' and the Emacs built-ins.
+  (setq register-preview-delay 0
+        register-preview-function #'consult-register-format)
+
+  ;; Optionally tweak the register preview window.
+  ;; This adds thin lines, sorting and hides the mode line of the window.
+  (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Optionally replace `completing-read-multiple' with an enhanced version.
+  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+
+  ;; Use Consult to select xref locations with preview
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+
+  ;; Configure other variables and modes in the :config section,
+  ;; after lazily loading the package.
+  :config
+
+  ;; Optionally configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key (kbd "M-."))
+  ;; (setq consult-preview-key (list (kbd "<S-down>") (kbd "<S-up>")))
+  ;; For some commands and buffer sources it is useful to configure the
+  ;; :preview-key on a per-command basis using the `consult-customize' macro.
+  (consult-customize
+   consult-theme
+   :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-recent-file consult--source-project-recent-file consult--source-bookmark
+   :preview-key (kbd "M-."))
+
+  ;; Optionally configure the narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; (kbd "C-+")
+
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; You may want to use `embark-prefix-help-command' or which-key instead.
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-root-function #'projectile-project-root)
+  (setq completion-in-region-function
+      (lambda (&rest args)
+        (apply (if vertico-mode
+                   #'consult-completion-in-region
+                 #'completion--in-region)
+               args))))
+
+(use-package consult-flycheck)
+(use-package consult-lsp
+  :config
+  (consult-lsp-marginalia-mode 1))
+
+(use-package embark
+  :ensure t
+
+  :bind
+  (("C-." . embark-act)         ;; pick some comfortable binding
+   ("C-;" . embark-dwim)        ;; good alternative: M-.
+   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+  :init
+
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  :demand t ; only necessary if you have the hook below
+  ;; if you want to have consult previews as you move around an
+  ;; auto-updating embark collect buffer
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+
+(use-package wgrep)
+
 ;;; (straight-use-package 'imenu-anywhere)
 (use-package ibuffer-projectile
   :init
@@ -221,8 +404,8 @@
 (use-package go-mode)
 (use-package gnuplot)
 (use-package gnuplot-mode)
-(use-package gitignore-mode)
-(use-package gitconfig-mode)
+;; (use-package gitignore-mode)
+;; (use-package gitconfig-mode)
 (use-package git-timemachine)
 (use-package git-link
   :bind (:map
@@ -253,13 +436,13 @@
         ("https://blog.cleancoder.com/atom.xml" dev)
         ("https://css-tricks.com/feed/" frontend)
         ("http://nullprogram.com/feed/" blog emacs)
-        ("https://www.reddit.com/r/Clojure/.rss" clojure)
+        ;; ("https://www.reddit.com/r/Clojure/.rss" clojure)
         ("https://golangnews.com/index.xml" golang)
         ("https://changelog.com/gotime/feed" golang)
         ("https://www.ardanlabs.com/blog/index.xml" golang)
         ("https://www.cncf.io/feed" k8s)
         ("https://kubernetes.io/feed.xml" k8s)
-        ;; ("https://www.reddit.com/r/emacs/.rss" emacs)
+        ("https://www.reddit.com/r/emacs/.rss" emacs)
         ("https://sachachua.com/blog/feed/" emacs)
         ("http://ergoemacs.org/emacs/blog.xml" emacs)
         ("https://emacsredux.com/feed.xml" emacs)
@@ -285,22 +468,10 @@
   (global-diff-hl-mode +1)
   (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
   (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
-
 (use-package csv-mode)
 (use-package crux
   :bind
   (("C-a" . crux-move-beginning-of-line)))
-(use-package counsel
-  :bind
-  (("M-x" . counsel-M-x)
-   ("C-x C-f" . counsel-find-file)
-   ("<f1> f" . counsel-describe-function)
-   ("<f1> v" . counsel-describe-variable)
-   ("<f1> l" . counsel-find-library)
-   ("<f2> i" . counsel-info-lookup-symbol)
-   ("<f2> u" . counsel-unicode-char)
-   :map minibuffer-local-map
-   ("C-r" . counsel-minibuffer-history)))
 (use-package company-lsp)
 (use-package company-go)
 (use-package company
@@ -318,7 +489,8 @@
   :diminish flyspell-mode
   :config
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
-        ispell-extra-args '("--sug-mode=ultra")))
+        ispell-extra-args '("--sug-mode=ultra"))
+  (unbind-key (kbd "C-.") flyspell-mode-map))
 ;;; (use-package clj-refactor)
 
 ;;; (use-package browse-kill-ring)
@@ -392,7 +564,7 @@
   (setq intentional-output-file "~/browse-intentions.json")
   (setq intentional-global-intentions
         '(("Dev Work" always ("http://localhost:3000/*"))
-          ("Language Goals" always ("translate.google.com/*"))
+          ("Language Goals" always ("translate.google.com/*" "https://www.deepl.com/*"))
           ("Work on-call" always ("https://*.pagerduty.com/*"))
           ("Work" (between-on-days "08:00" "18:00" (1 2 3 4 5))
            ("https://*.atlassian.net/*"
@@ -419,17 +591,17 @@
 
 ;; Experimental
 
-(use-package dogears
-  :straight (dogears :type git :host github :repo "alphapapa/dogears.el")
-  :init
-  (dogears-mode)
-  ;; These bindings are optional, of course:
-  :bind (:map global-map
-              ("M-g d" . dogears-go)
-              ("M-g M-b" . dogears-back)
-              ("M-g M-f" . dogears-forward)
-              ("M-g M-d" . dogears-list)
-              ("M-g M-D" . dogears-sidebar)))
+ ;; (use-package dogears
+;;   :straight (dogears :type git :host github :repo "alphapapa/dogears.el")
+;;   :init
+;;   (dogears-mode)
+;;   ;; These bindings are optional, of course:
+;;   :bind (:map global-map
+;;               ("M-g d" . dogears-go)
+;;               ("M-g M-b" . dogears-back)
+;;               ("M-g M-f" . dogears-forward)
+;;               ("M-g M-d" . dogears-list)
+;;               ("M-g M-D" . dogears-sidebar)))
 
 ;; Personal
 
@@ -660,7 +832,6 @@
 (global-set-key (kbd "s-k") #'crux-kill-whole-line)
 (global-set-key (kbd "s-d") #'crux-delete-file-and-buffer)
 
-
 (global-set-key (kbd "C-c a") #'org-agenda)
 ;; C-c b org-switchb
 ;; C-c c org-capture
@@ -800,7 +971,8 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 (load "~/.emacs.d/init-js.el")
 (when (load "~/.emacs.d/init-private.el" t)
   (require 'init-private))
-(add-to-list 'load-path (concat my/home-directory "/dev/emacs/mu-1.6.1/mu4e"))
+(add-to-list 'load-path (concat my/home-directory "/dev/emacs/mu-1.6.10/mu4e"))
+(add-to-list 'load-path (concat my/home-directory "/dev/emacs/yaml"))
 (load "~/.emacs.d/init-mu4e.el")
 
 (require 'init-org)
@@ -832,7 +1004,7 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
      ("m" . 43200)
      ("y" . 525960.0)
      ("pom" . 25)))
- '(org-export-backends '(ascii beamer html icalendar latex md odt confluence))
+ '(org-export-backends '(ascii html icalendar latex odt texinfo))
  '(org-latex-pdf-process
    '("xelatex -interaction nonstopmode -output-directory %o %f"))
  '(org-modules

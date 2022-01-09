@@ -284,6 +284,7 @@
 
 
 (require 'ox-latex)
+(require 'ox-texinfo)
 (add-to-list 'org-latex-packages-alist '("" "minted"))
 (setq org-latex-listings 'minted)
 
