@@ -509,9 +509,10 @@
   :init
   (setq aw-keys '(?a ?r ?s ?t ?n ?e ?i ?o)))
 (use-package ag)
-(use-package zenburn-theme
+(use-package zenburn-theme)
+(use-package leuven-theme
   :init
-  (load-theme 'zenburn t))
+  (load-theme 'leuven t))
 (use-package subword
   :diminish subword-mode)
 
