@@ -587,25 +587,33 @@
 (use-package typescript-mode)
 (defun my/setup-tide-mode ()
   (interactive)
-  (tide-setup)
-  (flycheck-mode +1)
-  (setq flycheck-check-syntax-automatically '(save mode-enabled))
-  (eldoc-mode +1)
-  (tide-hl-identifier-mode +1)
-  ;; company is an optional dependency. You have to
-  ;; install it separately via package-install
-  ;; `M-x package-install [ret] company`
-  (company-mode +1))
+  (when (string-equal "tsx" (file-name-extension buffer-file-name))
+    (tide-setup)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (eldoc-mode +1)
+    (tide-hl-identifier-mode +1)
+    ;; company is an optional dependency. You have to
+    ;; install it separately via package-install
+    ;; `M-x package-install [ret] company`
+    (company-mode +1)))
+
 (use-package web-mode
   :mode (("\\.html\\'" . web-mode)
          ("\\.html\\.eex\\'" . web-mode)
          ("\\.html\\.tera\\'" . web-mode)
-         ("\\.tsx\\'" . typescript-tsx-mode))
+         ("\\.tsx\\'" . web-mode))
   :init
-  (define-derived-mode typescript-tsx-mode typescript-mode "TypeScript-tsx")
+  (setq-default web-mode-indent-style 2
+                web-mode-code-indent-offset 4
+                web-mode-attr-indent-offset 2
+                web-mode-sql-indent-offset 2
+                web-mode-attr-value-indent-offset 2
+                web-mode-markup-indent-offset 2
+                web-mode-javascript-indentation 2)
   :hook
-  ((typescript-tsx-mode . my/setup-tide-mode)
-   (typescript-tsx-mode . prettier-mode)))
+  ((web-mode . my/setup-tide-mode)
+   (web-mode . prettier-mode)))
 
 (use-package tree-sitter)
 (use-package tree-sitter-langs)
