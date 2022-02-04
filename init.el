@@ -32,6 +32,10 @@
 
 (use-package f)
 
+  ;; :bind (([remap async-shell-command] . dtache-shell-command)
+  ;;        :map dtache-shell-mode-map
+  ;;        ("C-c C-q" . dtache-detach-dwim)))
+
 (use-package org
   :diminish org-table-header-line-mode)
 (setq org-roam-v2-ack t)
@@ -110,7 +114,10 @@
   :hook ((cider-mode . eldoc-mode))
   :init
   (add-hook 'cider-repl-mode-hook
-            (lambda () (run-hooks 'prelude-cider-repl-mode-hook))))
+            (lambda () (run-hooks 'prelude-cider-repl-mode-hook)))
+  ;; (add-hook 'cider-mode-hook
+  ;;           #'cider-setup-orderless)
+  )
 
 (use-package clojure-mode
   :ensure-system-package
@@ -195,10 +202,43 @@
 (use-package vertico
   :init
   (vertico-mode))
+
+;; This is the function that breaks apart the pattern.  To signal that
+;; an element is a package prefix, we keep its trailing "/" and return
+;; the rest as another pattern.
+(defun cider-orderless-component-separator (pattern)
+  (if (cider-connected-p)
+      (let ((slash-idx (string-match-p "/" pattern)))
+        (if slash-idx
+            (append (list (substring pattern 0 (1+ slash-idx)))
+                    (split-string (substring pattern (1+ slash-idx)) " +" t))
+          (split-string pattern " +" t)))
+    (split-string pattern " +" t)))
+
+;; This is the function that takes our package prefix and ensures that
+;; it is at the beginning (note the "^" in the regex).
+(defun cider-orderless-package-prefix (component)
+  (format "\\(?:^%s\\)" (regexp-quote component)))
+
+;; This is the function that notices that the candidate ends in a "/"
+;; and that it should use our `cider-orderless-package-prefix'
+;; function for turning the candidate into a regex.
+(defun cider-package-prefix (pattern _index _total)
+  (when (and (cider-connected-p) (string-suffix-p "/" pattern))
+    'cider-orderless-package-prefix))
+
+(defun cider-setup-orderless ()
+  (setq orderless-style-dispatchers '(cider-package-prefix))
+  (add-to-list 'orderless-matching-styles #'cider-orderless-package-prefix)
+  (setq orderless-component-separator #'cider-orderless-component-separator))
+
 (use-package orderless  :init
   (setq completion-styles '(orderless)
         completion-category-defaults nil
         completion-category-overrides '((file (styles partial-completion)))))
+
+
+
 (use-package savehist
   :init
   (savehist-mode))
@@ -255,6 +295,7 @@
          ("<help> a" . consult-apropos)            ;; orig. apropos-command
          ;; M-g bindings (goto-map)
          ("M-g e" . consult-compile-error)
+         ("M-g d" . dtache-consult-sources)
          ("M-g f" . consult-flycheck)               ;; Alternative: consult-flycheck
          ("M-g g" . consult-goto-line)             ;; orig. goto-line
          ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
@@ -393,15 +434,12 @@
               (ibuffer-projectile-set-filter-groups)
               (unless (eq ibuffer-sorting-mode 'alphabetic)
                 (ibuffer-do-sort-by-alphabetic)))))
-(use-package hyperbole
-  ;;:config
-  ;;(require 'hyperbole)
-  ;;:bind (("<M-return>" . hkey-either))
-  )
+
 (use-package html-to-hiccup)
 (use-package hl-todo)
 (use-package graphql-mode)
-(use-package go-mode)
+(use-package go-mode
+  :hook (before-save . gofmt-before-save))
 (use-package gnuplot)
 (use-package gnuplot-mode)
 ;; (use-package gitignore-mode)
@@ -509,13 +547,22 @@
   :init
   (setq aw-keys '(?a ?r ?s ?t ?n ?e ?i ?o)))
 (use-package ag)
-(use-package zenburn-theme)
-(use-package leuven-theme
+(use-package zenburn-theme
   :init
-  (load-theme 'leuven t))
+  (load-theme 'zenburn t))
+;; (use-package leuven-theme
+;;   :init
+;;   (load-theme 'leuven t))
 (use-package subword
   :diminish subword-mode)
 
+(use-package asm-blox)
+(use-package code-review)
+
+(use-package tree-sitter)
+(use-package tree-sitter-langs)
+(use-package tree-edit)
+(use-package evil-tree-edit)
 
 ;;; Personal packages
 (use-package awqat
@@ -535,25 +582,54 @@
 
 (use-package wat-mode
   :straight (wat-mode :type git :host github :repo "devonsparks/wat-mode"))
+(use-package tide)
 
 (use-package typescript-mode)
-(use-package web-mode)
-;; (use-package tree-sitter)
-;; (use-package tree-sitter-langs)
+(defun my/setup-tide-mode ()
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (eldoc-mode +1)
+  (tide-hl-identifier-mode +1)
+  ;; company is an optional dependency. You have to
+  ;; install it separately via package-install
+  ;; `M-x package-install [ret] company`
+  (company-mode +1))
+(use-package web-mode
+  :mode (("\\.html\\'" . web-mode)
+         ("\\.html\\.eex\\'" . web-mode)
+         ("\\.html\\.tera\\'" . web-mode)
+         ("\\.tsx\\'" . typescript-tsx-mode))
+  :init
+  (define-derived-mode typescript-tsx-mode typescript-mode "TypeScript-tsx")
+  :hook
+  ((typescript-tsx-mode . my/setup-tide-mode)
+   (typescript-tsx-mode . prettier-mode)))
+
+(use-package tree-sitter)
+(use-package tree-sitter-langs)
+(use-package tree-sitter-indent)
+(use-package prettier
+  :hook ((typescript-tsx-mode . prettier-mode)
+         (typescript-mode . prettier-mode)
+         (js-mode . prettier-mode)
+         (json-mode . prettier-mode)
+         (css-mode . prettier-mode)
+         (scss-mode . prettier-mode)))
+(use-package rust-mode)
 
 ;; (define-derived-mode typescript-tsx-mode typescript-mode "tsx")
 ;; (add-hook 'typescript-tsx-mode-hook #'tree-sitter-hl-mode)
 ;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-tsx-mode . tsx))
 ;; (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescript-tsx-mode))
-
+;;
 ;; (add-hook
 ;;  'typescript-mode-hook
 ;;  (lambda ()
 ;;    (setq-local font-lock-defaults '(()))
 ;;    (tree-sitter-hl-mode 1)))
-
-;; and
-
+;;
 ;; (tree-sitter-require 'tsx)
 ;; (add-to-list
 ;;  'tree-sitter-major-mode-language-alist
@@ -985,17 +1061,47 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 
 (provide 'init)
 
+(require 'dtache)
+(add-hook 'after-init-hook #'dtache-setup)
+(global-set-key [remap async-shell-command] #'dtache-shell-command)
+(bind-key (kbd "C-c C-q") #'dtache-detach-dwim 'dtache-shell-mode-map)
+(defun my/dtache-state-transition-notification (session)
+  "Send an `alert' notification when SESSION becomes inactive."
+  (let ((status (dtache--session-status session))
+        (title
+         (pcase (dtache--session-status session)
+           ('success "Dtache finished!")
+           ('failure "Dtache failed!"))))
+    (alert (dtache--session-command session)
+           :title title
+           :severity (pcase status
+                       ('success 'moderate)
+                       ('failure 'high))
+           :category 'compile
+           :id (pcase status
+                 ('success 'dtache-success)
+                 ('failure 'dtache-failure)))))
+(setq dtache-notification-function #'my/dtache-state-transition-notification)
+
+(require 'dtache-consult)
+(require 'dtache-shell)
+
+(set-face-attribute 'default nil :family "Hack")
+
 ;;; init.el ends here
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(Info-default-directory-list '("/usr/local/share/info/" "/usr/share/info/"))
  '(alert-default-style 'osx-notifier)
  '(custom-safe-themes
-   '("ea5822c1b2fb8bb6194a7ee61af3fe2cc7e2c7bab272cbb498a0234984e1b2d9" "d0fa4334234e97ece3d72d86e39a574f8256b4a8699a1fb5390c402892a1c024" default))
+   '("aba75724c5d4d0ec0de949694bce5ce6416c132bb031d4e7ac1c4f2dbdd3d580" "a44bca3ed952cb0fd2d73ff3684bda48304565d3eb9e8b789c6cca5c1d9254d1" "ea5822c1b2fb8bb6194a7ee61af3fe2cc7e2c7bab272cbb498a0234984e1b2d9" "d0fa4334234e97ece3d72d86e39a574f8256b4a8699a1fb5390c402892a1c024" default))
  '(debug-on-error t)
  '(geiser-default-implementation 'mit)
+ '(gofmt-command "goimports")
+ '(native-comp-async-report-warnings-errors nil)
  '(org-display-remote-inline-images 'cache)
  '(org-duration-units
    '(("min" . 1)
@@ -1053,4 +1159,4 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:inherit nil :extend nil :stipple nil :background "#3F3F3F" :foreground "#DCDCCC" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "nil" :family "Hack")))))
