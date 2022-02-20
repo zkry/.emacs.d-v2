@@ -58,6 +58,8 @@
 (use-package use-package-ensure-system-package
   :ensure t)
 
+(use-package deadgrep)
+
 (use-package crdt)
 
 (use-package diminish
@@ -560,7 +562,8 @@
 (use-package code-review)
 
 (use-package tree-sitter)
-(use-package tree-sitter-langs)
+(use-package tree-sitter-langs
+  :straight (tree-sitter-langs :type git :host github :repo "zkry/tree-sitter-langs"))
 (use-package tree-edit)
 (use-package evil-tree-edit)
 
@@ -615,9 +618,6 @@
   ((web-mode . my/setup-tide-mode)
    (web-mode . prettier-mode)))
 
-(use-package tree-sitter)
-(use-package tree-sitter-langs)
-(use-package tree-sitter-indent)
 (use-package prettier
   :hook ((typescript-tsx-mode . prettier-mode)
          (typescript-mode . prettier-mode)
@@ -625,6 +625,9 @@
          (json-mode . prettier-mode)
          (css-mode . prettier-mode)
          (scss-mode . prettier-mode)))
+
+;; (tree-sitter-require 'yaml)
+
 (use-package rust-mode)
 
 ;; (define-derived-mode typescript-tsx-mode typescript-mode "tsx")
@@ -961,6 +964,7 @@
 (global-set-key (kbd "C-'") #'avy-goto-char-timer)
 (global-set-key (kbd "M-g f") #'avy-goto-line)
 (global-set-key (kbd "M-g w") #'avy-goto-word-1)
+(global-set-key (kbd "<f5>") #'deadgrep)
 
 (setq auth-sources '("~/.authinfo"))
 
@@ -1129,7 +1133,10 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
    '(clj-refactor perspective html-to-hiccup graphql package-lint racket-mode graphql-mode lsp-java f org-tree-slide deft org-journal org-download 2048-game ob-go ivy-youtube hyperbole alert ibuffer-projectile gnuplot gnuplot-mode forge kubernetes hy-mode csv-mode turkish elfeed lua-mode ample-theme ag scss-mode protobuf-mode flycheck-clj-kondo rjsx-mode groovy-mode org-pomodoro dockerfile-mode yasnippet yasnippet-snippets git-link yaml-mode geiser lsp-ui company-lsp json-mode js2-mode gotest go-projectile go-eldoc company-go go-mode rainbow-mode elisp-slime-nav cider clojure-mode rainbow-delimiters company counsel swiper ivy exec-path-from-shell zop-to-char zenburn-theme which-key volatile-highlights undo-tree super-save smartrep smartparens operate-on-number move-text magit projectile imenu-anywhere hl-todo guru-mode gitignore-mode gitconfig-mode git-timemachine gist flycheck expand-region epl editorconfig easy-kill diminish diff-hl discover-my-major crux browse-kill-ring beacon anzu ace-window))
  '(reb-re-syntax 'read)
  '(safe-local-variable-values
-   '((eval when
+   '((web-mode-javascript-indentation . 4)
+     (web-mode-javascript-indentation . 2)
+     (web-mode-indent-style . 2)
+     (eval when
            (and
             (buffer-file-name)
             (not
