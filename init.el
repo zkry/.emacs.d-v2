@@ -54,6 +54,8 @@
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
+(use-package mustache)
+(use-package org-runbook)
 
 (use-package use-package-ensure-system-package
   :ensure t)
