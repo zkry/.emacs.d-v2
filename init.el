@@ -531,6 +531,7 @@
   (global-set-key [remap kill-ring-save] 'easy-kill)
   (global-set-key [remap mark-sexp] 'easy-mark))
 (use-package dockerfile-mode)
+(use-package docker-tramp)
 (use-package discover-my-major)
 
 (use-package diff-hl
