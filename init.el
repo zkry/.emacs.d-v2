@@ -267,6 +267,18 @@
         completion-category-overrides '((file (styles partial-completion)))))
 
 
+(use-package corfu
+  :custom
+  (corfu-cycle t)
+  (corfu-auto t)
+  (corfu-separator ?\s)
+  (corfu-quit-at-boundary nil)
+  (corfu-quit-no-match 'separator)
+  (corfu-on-exact-match 'insert)
+  (corfu-scroll-margin 5)
+  
+  :init
+  (global-corfu-mode))
 
 (use-package savehist
   :init
