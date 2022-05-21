@@ -62,6 +62,10 @@
 
 (use-package deadgrep)
 
+(use-package rg
+  :init
+  (rg-enable-default-bindings))
+
 (use-package crdt)
 
 (use-package diminish
