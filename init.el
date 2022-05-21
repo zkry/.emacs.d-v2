@@ -189,7 +189,32 @@
   (("C-M-SPC" . sp-mark-sexp)))
 (use-package scss-mode)
 (use-package rjsx-mode)
+(use-package restclient)
 (use-package racket-mode)
+(use-package terraform-mode)
+
+(use-package typescript-mode
+  :mode (rx ".ts" string-end)
+  :init
+  (define-derived-mode typescript-tsx-mode typescript-mode "typescript-tsx")
+  (add-to-list 'auto-mode-alist (cons (rx ".tsx" string-end) #'typescript-tsx-mode)))
+
+;; (use-package emmet-mode :ensure t :hook typescript-mode)
+(use-package tree-sitter
+  :hook (typescript-mode . tree-sitter-hl-mode)
+  :config
+  (setf (alist-get 'typescript-tsx-mode tree-sitter-major-mode-language-alist) 'tsx))
+(use-package tree-sitter-langs :ensure t)
+;; (use-package prettier-js :ensure t :hook (typescript-mode))
+(require 'tree-sitter)
+(require 'tree-sitter-langs)
+
+(straight-use-package
+ '(tree-sitter-indent :type git
+                      :repo "https://codeberg.org/FelipeLema/tree-sitter-indent.el.git"
+                      :branch "main"
+                      :files ("tree-sitter-indent.el")))
+
 (use-package protobuf-mode)
 (use-package projectile
   :config
@@ -242,6 +267,18 @@
         completion-category-overrides '((file (styles partial-completion)))))
 
 
+(use-package corfu
+  :custom
+  (corfu-cycle t)
+  (corfu-auto t)
+  (corfu-separator ?\s)
+  (corfu-quit-at-boundary nil)
+  (corfu-quit-no-match 'separator)
+  (corfu-on-exact-match 'insert)
+  (corfu-scroll-margin 5)
+  
+  :init
+  (global-corfu-mode))
 
 (use-package savehist
   :init
@@ -485,6 +522,9 @@
         ("https://www.cncf.io/feed" k8s)
         ("https://kubernetes.io/feed.xml" k8s)
         ("https://www.reddit.com/r/emacs/.rss" emacs)
+        ("https://www.reddit.com/r/Clojure/.rss" clojure)
+        ("https://www.reddit.com/r/emacs/.rss" emacs)
+        ("https://www.reddit.com/r/programming/.rss" programming)
         ("https://sachachua.com/blog/feed/" emacs)
         ("http://ergoemacs.org/emacs/blog.xml" emacs)
         ("https://emacsredux.com/feed.xml" emacs)
@@ -503,6 +543,7 @@
   (global-set-key [remap kill-ring-save] 'easy-kill)
   (global-set-key [remap mark-sexp] 'easy-mark))
 (use-package dockerfile-mode)
+(use-package docker-tramp)
 (use-package discover-my-major)
 
 (use-package diff-hl
@@ -560,7 +601,44 @@
 (use-package subword
   :diminish subword-mode)
 
-(use-package asm-blox)
+ (use-package engine-mode
+	:ensure t
+	:config
+	(defengine google "https://google.com/search?q=%s" :keybinding "g"
+	  :docstring "Applied Google-fu.")
+	(defengine google-images "http://www.google.com/images?hl=en&source=hp&biw=1440&bih=795&gbv=2&aq=f&aqi=&aql=&oq=&q=%s" :docstring "Google Images")
+	(defengine google-maps "http://maps.google.com/maps?q=%s" :docstring "Mappin' it up.")
+	(defengine duckduckgo "https://duckduckgo.com/?q=%s" :keybinding "d"
+	  :docstring "DDG!")
+	(defengine qwant "https://www.qwant.com/?q=%s" :keybinding "q"
+	  :docstring "Qwant it.")
+	(defengine wikipedia "https://en.wikipedia.org/wiki/Special:Search?search=%s" :keybinding "w"
+	  :docstring "Search Wikipedia.")
+	(defengine youtube "http://www.youtube.com/results?aq=f&oq=&search_query=%s" :keybinding "y"
+	  :docstring "Search YouTube.")
+	(defengine github "https://github.com/search?ref=simplesearch&q=%s" :keybinding "h"
+	  :docstring "Search GitHub.")
+	(defengine melpa "https://melpa.org/#/?q=%s" :keybinding "m"
+	  :docstring "Search the Milkypostman's Emacs Lisp Package Archive.")
+	(defengine stack-overflow "https://stackoverflow.com/search?q=%s" :keybinding "s"
+	  :docstring "Search Stack Overflow.")
+	(defengine wolfram-alpha "http://www.wolframalpha.com/input/?i=%s" :keybinding "a"
+	  :docstring "Search Wolfram Alpha.")
+	(defengine rfcs "http://pretty-rfc.herokuapp.com/search?q=%s" :keybinding "r"
+	  :docstring "Search RFC documents.")
+	(defengine ctan "http://www.ctan.org/search/?x=1&PORTAL=on&phrase=%s" :keybinding "c"
+	  :docstring "Search the Comprehensive TeX Archive Network")
+	(defengine project-gutenberg "http://www.gutenberg.org/ebooks/search/?query=%s" :keybinding "p"
+	  :docstring "Search Project Gutenberg.")
+	(engine/set-keymap-prefix (kbd "C-x /"))
+	(setq engine/browser-function 'browse-url-firefox)
+    (setq browse-url-firefox-program "/Applications/Firefox.app/Contents/MacOS/firefox")
+	:init
+	(engine-mode t))
+
+
+
+;(use-package asm-blox)
 (use-package code-review)
 
 (use-package tree-sitter)
@@ -593,11 +671,12 @@
 (defun my/setup-tide-mode ()
   (interactive)
   (when (string-equal "tsx" (file-name-extension buffer-file-name))
-    (tide-setup)
+    (lsp)
+    ;; (tide-setup)
     (flycheck-mode +1)
     (setq flycheck-check-syntax-automatically '(save mode-enabled))
     (eldoc-mode +1)
-    (tide-hl-identifier-mode +1)
+    ;; (tide-hl-identifier-mode +1)
     ;; company is an optional dependency. You have to
     ;; install it separately via package-install
     ;; `M-x package-install [ret] company`
@@ -624,6 +703,7 @@
   :hook ((typescript-tsx-mode . prettier-mode)
          (typescript-mode . prettier-mode)
          (js-mode . prettier-mode)
+         (rjsx-mode . prettier-mode)
          (json-mode . prettier-mode)
          (css-mode . prettier-mode)
          (scss-mode . prettier-mode)))
@@ -710,6 +790,13 @@
   :hook (ag-mode . ag-plus-mode))
 (use-package restclient)
 
+(defun file-notify-rm-all-watches ()
+  "Remove all existing file notification watches from Emacs."
+  (interactive)
+  (maphash
+   (lambda (key _value)
+     (file-notify-rm-watch key))
+   file-notify-descriptors))
 
 (defun prelude-clojure-mode-defaults ()
     (subword-mode +1))
