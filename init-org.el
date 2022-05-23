@@ -166,32 +166,38 @@
 (define-key org-mode-map (kbd "C-c C-m") #'org-pomodoro)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d)" "FROZEN(f)" "CANCELLED(c)")))
+      '((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "INTR(i)" "|" "DONE(d)" "CANCELLED(c)")))
 
+;; Show the daily agenda by default
+(setq org-agenda-span 'day)
+
+;; Hide tasks that are scheduled in the future
+(setq org-agenda-todo-ignore-scheduled 'future)
+
+;; Use "second" instead of "day" for time comparision
+(setq org-agenda-todo-ignore-time-comparison-use-seconds t)
+
+(setq org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
+
+;; TODO: fixme
 (setq org-capture-templates
-      '(("t" "Todo" checkitem (file+headline zr/organizer-file "Daily Log")
-         "[ ] %?")
-        ("n" "Note" checkitem (file+headline zr/organizer-file "Daily Log")
-         " %?")
-        ;; ("r" "+ Reading/Watching list" entry (file+headline zr/organizer-file "Reading/Watching List")
-        ;;  "** %?%^{Link}p%^{Topic|default|emacs|go|software|random|clojure|self-improvement}p\n")
-        ))
+      '(("t" "Todo" entry (file zr/refile-file)
+         "* TODO %?\n%U" :empty-lines 1)
+        ("T" "Todo with Clipboard" entry (file zr/refile-file)
+         "* TODO %?\n%U\n   %c" :empty-lines 1)
+        ("n" "Note" entry (file zr/refile-file)
+         "* %?\n%U" :empty-lines 1)
+        ("N" "Note with Clipboard" entry (file zr/refile-file)
+         "* %?\n%U\n   %c" :empty-lines 1)))
 
 (setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM")
-(setq org-global-properties (quote (("STYLE_ALL" . "habit pi"))))
-
-(setq org-tag-alist '((:startgroup . nil)
-                      ("@work" . ?w) ("@home" . ?h) ("@market" . ?m)
-                      (:endgroup . nil)
-                      ("deepw" . ?d)))
-
-(setq org-clock-persist 'history)
-(org-clock-persistence-insinuate)
-
-(setq org-agenda-files (list zr/organizer-file
-                             (zr/org-file "tickler.org")))
+(setq org-agenda-todo-ignore-deadlines nil)
+(setq org-agenda-files (list zr/organizer-file))
 (setq org-default-notes-file zr/refile-file)
+(setq org-adapt-indentation t)
+(setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
+(setq org-log-into-drawer t)
 
 (add-hook 'org-mode-hook
           (lambda ()
@@ -205,19 +211,11 @@
  '((dot . t)
    (go . t)
    (java . t)
+   (shell . t)
    (ruby . t)
    (latex . t)
    (scheme . t))) ; this line activates dot
 
-(defun zr/sort-by-estimation ()
-  (string-to-number (or (org-entry-get nil "ESTIMATION") "0")))
-
-(defvar bh/hide-scheduled-and-waiting-next-tasks t)
-
-(setq org-agenda-todo-ignore-deadlines nil)
-(setq org-agenda-todo-ignore-scheduled 'future)
-(setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
-(setq org-log-into-drawer t)
 
 (defun org-current-is-todo ()
   (string= "TODO" (org-get-todo-state)))
@@ -245,34 +243,39 @@
          (future-scheduled (and scheduled-time (time-less-p (current-time) scheduled-time))))
     (if future-scheduled skip nil)))
 
-
 (setq org-agenda-custom-commands
-      (quote (("g" "GTD"
-               ((agenda "" nil)
-                (tags-todo "gtd+assorted-@market-frozen"
-                           ((org-agenda-overriding-header "Tasks Backlog")
-                            (org-agenda-skip-function #'zac/org-skip-future-scheduled)))
-                                        ;(tags-todo "gtd-assorted/NEXT"
-                                        ;           ((org-agenda-overriding-header "Projects NEXT Tasks")
-                                        ;            (org-agenda-todo-ignore-scheduled t)))
-                (tags-todo "gtd-assorted-@market-frozen/TODO"
-                           ((org-agenda-overriding-header "Project TODO Tasks")
-                            (org-agenda-todo-ignore-scheduled t)
-                            (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first)))
-                (tags-todo "gtd+deepw-@market-frozen/TODO"
-                           ((org-agenda-overriding-header "Deep Work Candidates")
-                            (org-agenda-todo-ignore-scheduled t)
-                            (org-agenda-skip-function (lambda () (or (zac/org-skip-future-scheduled) (my-org-agenda-skip-all-siblings-but-first))))))))
-              ("w" "Work"
-               ((agenda "" nil)
-                (tags-todo "+@office/TODO"
-                           ((org-agenda-overriding-header "TODO Tasks")
-                            (org-agenda-todo-ignore-scheduled t)
-                            (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first))))
-               ((org-agenda-tag-filter-preset '("+@office")))))))
+      '(("n" "Agenda / INTR / PROG / NEXT"
+         ((agenda "" nil)
+          (todo "INTR" nil)
+          (todo "PROG" nil)
+          (todo "NEXT" nil))
+         nil)))
 
-(setq org-agenda-todo-ignore-scheduled 'future)
-
+;; Old org agenda setup
+;; (setq org-agenda-custom-commands
+;;       (quote (("g" "GTD"
+;;                ((agenda "" nil)
+;;                 (tags-todo "gtd+assorted-@market-frozen"
+;;                            ((org-agenda-overriding-header "Tasks Backlog")
+;;                             (org-agenda-skip-function #'zac/org-skip-future-scheduled)))
+;;                                         ;(tags-todo "gtd-assorted/NEXT"
+;;                                         ;           ((org-agenda-overriding-header "Projects NEXT Tasks")
+;;                                         ;            (org-agenda-todo-ignore-scheduled t)))
+;;                 (tags-todo "gtd-assorted-@market-frozen/TODO"
+;;                            ((org-agenda-overriding-header "Project TODO Tasks")
+;;                             (org-agenda-todo-ignore-scheduled t)
+;;                             (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first)))
+;;                 (tags-todo "gtd+deepw-@market-frozen/TODO"
+;;                            ((org-agenda-overriding-header "Deep Work Candidates")
+;;                             (org-agenda-todo-ignore-scheduled t)
+;;                             (org-agenda-skip-function (lambda () (or (zac/org-skip-future-scheduled) (my-org-agenda-skip-all-siblings-but-first))))))))
+;;               ("w" "Work"
+;;                ((agenda "" nil)
+;;                 (tags-todo "+@office/TODO"
+;;                            ((org-agenda-overriding-header "TODO Tasks")
+;;                             (org-agenda-todo-ignore-scheduled t)
+;;                             (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first))))
+;;                ((org-agenda-tag-filter-preset '("+@office")))))))
 
 ;; TODO Find a better way to manage stuck projects. It seems like the 2nd level
 ;;      header shouldn't have a TODO tag.
@@ -281,7 +284,6 @@
         ("TODO" "NEXT")
         nil
         ""))
-
 
 (require 'ox-latex)
 (require 'ox-texinfo)
@@ -295,6 +297,8 @@
 
 (setq org-src-fontify-natively t)
 (setq org-latex-listing t)
+
+(global-set-key (kbd "C-c l") #'org-store-link)
 
 (require 'org-download)
 (add-hook 'dired-mode-hook 'org-download-enable)
@@ -319,6 +323,14 @@
 (global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
 (global-set-key (kbd "C-c n d") #'deft)
 (define-key org-mode-map (kbd "C-'") nil)
+
+(define-key org-roam-mode-map (kbd "C-c n a t") #'org-roam-dailies-capture-today)
+(define-key org-roam-mode-map (kbd "C-c n a y") #'org-roam-dailies-capture-yesterday)
+(define-key org-roam-mode-map (kbd "C-c n a m") #'org-roam-dailies-capture-tomorrow)
+(define-key org-roam-mode-map (kbd "C-c n a w") #'org-roam-dailies-capture-this-week)
+(define-key org-roam-mode-map (kbd "C-c n l") #'org-roam)
+(define-key org-roam-mode-map (kbd "C-c n f") #'org-roam-find-file)
+(define-key org-roam-mode-map (kbd "C-c n g") #'org-roam-graph)
 
 (require 'org-journal)
 (define-key org-roam-mode-map (kbd "C-c n j") #'org-journal-new-entry)
