@@ -57,8 +57,13 @@
 (use-package mustache)
 (use-package org-runbook)
 
+(use-package code-review)
+(use-package inspector)
+
 (use-package use-package-ensure-system-package
   :ensure t)
+
+(use-package ripgrep)
 
 (use-package deadgrep)
 
@@ -132,6 +137,7 @@
   (clojure-lsp . clojure-lsp/brew/clojure-lsp-native)
   :config
   (setq nrepl-log-messages t)
+  (setq lsp-enable-completion-at-point nil)
   (setq prelude-clojure-mode-hook 'prelude-clojure-mode-defaults)
   :hook ((clojure-mode . lsp)
          (clojurescript-mode . lsp)
@@ -301,6 +307,9 @@
   (defun crm-indicator (args)
     (cons (concat "[CRM] " (car args)) (cdr args)))
   (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p)
 
   ;; Do not allow the cursor in the minibuffer prompt
   (setq minibuffer-prompt-properties
@@ -1110,6 +1119,13 @@
 ;; (global-set-key (kbd "C-c j") 'counsel-git-grep)
 ;; (global-set-key (kbd "C-c a") 'counsel-ag)
 ;; (global-set-key (kbd "C-x l") 'counsel-locate)
+
+(use-package envrc
+  :init
+  (envrc-global-mode))
+
+(with-eval-after-load 'envrc
+  (define-key envrc-mode-map (kbd "C-c e") 'envrc-command-map))
 
 ;;; Advice
 (defadvice set-buffer-major-mode (after set-major-mode activate compile)
