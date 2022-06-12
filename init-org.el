@@ -19,6 +19,8 @@
 (require 'org-habit)
 (require 'org-duration)
 
+(require 'org-protocol)
+
 (setq org-roam-v2-ack t)
 
 (defvar zr/org-directory "/Users/zromero/Dropbox/org/")
@@ -29,6 +31,7 @@
 (defvar zr/refile-file (zr/org-file "refile.org"))
 (defvar zr/notes-file (zr/org-file "notesV2.org"))
 (defvar zr/organizer-file (zr/org-file "organizerV2.org"))
+(defvar zr/tickler-file (zr/org-file "tickler.org"))
 
 (defun zr/open-init ()
   (interactive)
@@ -163,7 +166,7 @@
 
 (global-set-key (kbd "C-c c") 'org-capture)
 
-(define-key org-mode-map (kbd "C-c C-m") #'org-pomodoro)
+(define-key org-mode-map (kbd "C-c C-x C-m") #'org-pomodoro)
 
 (setq org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "INTR(i)" "|" "DONE(d)" "CANCELLED(c)")))
@@ -182,18 +185,20 @@
 ;; TODO: fixme
 (setq org-capture-templates
       '(("t" "Todo" entry (file zr/refile-file)
-         "* TODO %?\n%U" :empty-lines 1)
+         "* TODO %?\n   %U\n   %l" :empty-lines 1)
         ("T" "Todo with Clipboard" entry (file zr/refile-file)
-         "* TODO %?\n%U\n   %c" :empty-lines 1)
+         "* TODO %?\n   %U\n   %c" :empty-lines 1)
         ("n" "Note" entry (file zr/refile-file)
-         "* %?\n%U" :empty-lines 1)
+         "* %?\n   %U\n   %l" :empty-lines 1)
         ("N" "Note with Clipboard" entry (file zr/refile-file)
-         "* %?\n%U\n   %c" :empty-lines 1)))
+         "* %?\n   %U\n   %c" :empty-lines 1)
+        ("r" "Reading List" entry (file+headline zr/organizer-file "Reading List")
+         "* TODO %?\n   %U\n   %l" :empty-lines 1)))
 
 (setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-agenda-todo-ignore-deadlines nil)
-(setq org-agenda-files (list zr/organizer-file))
+(setq org-agenda-files (list zr/organizer-file zr/tickler-file))
 (setq org-default-notes-file zr/refile-file)
 (setq org-adapt-indentation t)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
