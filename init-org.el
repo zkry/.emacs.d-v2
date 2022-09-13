@@ -6,8 +6,12 @@
 
 ;;; Code:
 
+(use-package org-tree-slide
+  :bind
+  (("<f8>" . org-tree-slide-mode)
+   ("S-<f8>" . org-tree-slide-skip-done-toggle)))
+(global-set-key (kbd "<f7>") #'org-timer-start)
 
-(use-package org-tree-slide)
 (use-package org-pomodoro)
 (use-package org-journal)
 (use-package org-download)
@@ -359,6 +363,7 @@
        (deft-default-extension "org")
        (deft-directory org-roam-directory))
 
+(setq org-show-notification-handler #'message)
 
 (provide 'init-org)
 

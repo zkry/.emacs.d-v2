@@ -64,12 +64,14 @@
   :ensure t)
 
 (use-package ripgrep)
+(setq ripgrep-executable "/usr/local/bin/rg")
 
 (use-package deadgrep)
 
 (use-package rg
   :init
   (rg-enable-default-bindings))
+(setq rg-executable "/usr/local/bin/rg")
 
 (use-package crdt)
 
@@ -271,16 +273,16 @@
   (add-to-list 'orderless-matching-styles #'cider-orderless-package-prefix)
   (setq orderless-component-separator #'cider-orderless-component-separator))
 
-(use-package orderless  :init
-  (setq completion-styles '(orderless)
+(use-package orderless
+  :init
+  (setq completion-styles '(orderless basic)
         completion-category-defaults nil
         completion-category-overrides '((file (styles partial-completion)))))
-
 
 (use-package corfu
   :custom
   (corfu-cycle t)
-  (corfu-auto t)
+  (corfu-auto nil)
   (corfu-separator ?\s)
   (corfu-quit-at-boundary nil)
   (corfu-quit-no-match 'separator)
@@ -450,6 +452,36 @@
                  #'completion--in-region)
                args))))
 
+(use-package consult-dir
+  :ensure t
+  :bind (("C-x C-d" . consult-dir)
+         :map vertico-map
+         ("C-x C-d" . consult-dir)
+         ("C-x C-j" . consult-dir-jump-file)))
+
+(defun consult-dir--tramp-docker-hosts ()
+  "Get a list of hosts from docker."
+  (when (require 'docker-tramp nil t)
+    (let ((hosts)
+          (docker-tramp-use-names t))
+      (dolist (cand (docker-tramp--parse-running-containers))
+        (let ((user (unless (string-empty-p (car cand))
+                        (concat (car cand) "@")))
+              (host (car (cdr cand))))
+          (push (concat "/docker:" user host ":/") hosts)))
+      hosts)))
+
+(defvar consult-dir--source-tramp-docker
+  `(:name     "Docker"
+    :narrow   ?d
+    :category file
+    :face     consult-file
+    :history  file-name-history
+    :items    ,#'consult-dir--tramp-docker-hosts)
+  "Docker candiadate source for `consult-dir'.")
+
+;; (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-docker t)
+
 (use-package consult-flycheck)
 (use-package consult-lsp
   :config
@@ -518,7 +550,8 @@
 (use-package geiser
   :config
   (put 'fresh 'scheme-indent-function 1))
-(use-package forge)
+(use-package forge
+  :after magit) ;; 
 (use-package flycheck
   :diminish flycheck-mode)
 (use-package flycheck-clj-kondo)
@@ -585,15 +618,14 @@
   (setq company-tooltip-limit 10)
   (setq company-minimum-prefix-length 2)
   (setq company-tooltip-align-annotations t)
-  (setq company-tooltip-flip-when-above t)
-  :init
-  (global-company-mode 1))
+  (setq company-tooltip-flip-when-above t))
 (use-package flyspell
   :diminish flyspell-mode
   :config
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
         ispell-extra-args '("--sug-mode=ultra"))
   (unbind-key (kbd "C-.") flyspell-mode-map))
+
 ;;; (use-package clj-refactor)
 
 ;;; (use-package browse-kill-ring)
@@ -612,9 +644,36 @@
   :init
   (setq aw-keys '(?a ?r ?s ?t ?n ?e ?i ?o)))
 (use-package ag)
-(use-package zenburn-theme
+;; (use-package zenburn-theme
+;;   :init
+;;   (load-theme 'zenburn t))
+;; (use-package modus-themes
+;;   :ensure
+;;   :init
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs nil
+;;         modus-themes-region '(bg-only no-extend))
+;;   (modus-themes-load-themes)
+;;   :config
+;;   (modus-themes-load-vivendi)
+;;   :bind ("<f5" . modus-themes-toggle))
+;; (use-package ample-theme
+;;   :init (progn (load-theme 'ample t t)
+;;                (load-theme 'ample-flat t t)
+;;                (load-theme 'ample-light t t)
+;;                (enable-theme 'ample))
+;;   :defer t
+;;   :ensure t)
+(use-package ef-themes
   :init
-  (load-theme 'zenburn t))
+  (setq ef-themes-mixed-fonts t
+        ef-themes-variable-pitch-ui t)
+  :config
+  (ef-themes-select 'ef-duo-dark))
+;; (use-package tao-theme)
+;; (load-theme 'tao-yin)
+
+
 ;; (use-package leuven-theme
 ;;   :init
 ;;   (load-theme 'leuven t))
@@ -700,7 +759,7 @@
     ;; company is an optional dependency. You have to
     ;; install it separately via package-install
     ;; `M-x package-install [ret] company`
-    (company-mode +1)))
+    ))
 
 (use-package web-mode
   :mode (("\\.html\\'" . web-mode)
@@ -719,6 +778,11 @@
   ((web-mode . my/setup-tide-mode)
    (web-mode . prettier-mode)))
 
+(use-package emms)
+(require 'emms-setup)
+(emms-all)
+(emms-default-players)
+(setq emms-source-file-default-directory "~/Downloads/Music/")
 (use-package prettier
   :hook ((typescript-tsx-mode . prettier-mode)
          (typescript-mode . prettier-mode)
@@ -732,6 +796,10 @@
 
 (use-package rust-mode)
 
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
 ;; (define-derived-mode typescript-tsx-mode typescript-mode "tsx")
 ;; (add-hook 'typescript-tsx-mode-hook #'tree-sitter-hl-mode)
 ;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-tsx-mode . tsx))
@@ -907,6 +975,12 @@
 (use-package midnight)
 (require 'tabify)
 
+(require 'eshell)
+(require 'em-smart)
+(setq eshell-where-to-jump 'begin)
+(setq eshell-review-quick-commands nil)
+(setq eshell-smart-space-goes-to-end t)
+
 (require 're-builder)
 (setq reb-re-syntax 'string)
 
@@ -919,6 +993,7 @@
       compilation-scroll-output 'first-error ; Automatically scroll to first error
       )
 
+(repeat-mode)
 (setq-default indent-tabs-mode nil)
 (setq-default tab-width 8)
 (setq require-final-newline t)
@@ -1170,6 +1245,8 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
                                      (string-to-number (or (match-string 3 name) ""))))
                             fn))) files)))
 
+(use-package multiple-cursors)
+(use-package lispy)
 (load "~/.emacs.d/init-org.el")
 (load "~/.emacs.d/init-elisp.el")
 (load "~/.emacs.d/init-go.el")
