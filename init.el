@@ -324,7 +324,9 @@
         #'command-completion-default-include-p)
 
   ;; Enable recursive minibuffers
-  (setq enable-recursive-minibuffers t))
+  (setq enable-recursive-minibuffers t)
+  (tab-bar-mode 1)
+  (tab-bar-history-mode))
 (use-package marginalia
   ;; Either bind `marginalia-cycle` globally or only in the minibuffer
   :bind (("M-A" . marginalia-cycle)
@@ -625,6 +627,7 @@
   (setq ispell-program-name "aspell" ; use aspell instead of ispell
         ispell-extra-args '("--sug-mode=ultra"))
   (unbind-key (kbd "C-.") flyspell-mode-map))
+(use-package pdf-tools)
 
 ;;; (use-package clj-refactor)
 
@@ -669,16 +672,24 @@
   (setq ef-themes-mixed-fonts t
         ef-themes-variable-pitch-ui t)
   :config
-  (ef-themes-select 'ef-duo-dark))
-;; (use-package tao-theme)
-;; (load-theme 'tao-yin)
-
-
+  (ef-themes-select 'ef-night))
+;; (use-package poet-theme
+;;   :config
+;;   (load-theme 'poet))
+;; (use-package color-theme-sanityinc-tomorrow
+;;   :config
+;;   (color-theme-sanityinc-tomorrow-eighties))
+;; (use-package tao-theme
+;;   :config
+;;   (load-theme 'tao-yin))
+;; (use-package kaolin-themes
+;;   :config
+;;   (load-theme 'kaolin-dark t))
 ;; (use-package leuven-theme
 ;;   :init
 ;;   (load-theme 'leuven t))
-(use-package subword
-  :diminish subword-mode)
+;; (use-package subword
+;;   :diminish subword-mode)
 
  (use-package engine-mode
 	:ensure t
@@ -1103,12 +1114,14 @@
 (global-set-key (kbd "C-M-SPC") #'sp-mark-sexp)
 (global-set-key (kbd "s-k") #'crux-kill-whole-line)
 (global-set-key (kbd "s-d") #'crux-delete-file-and-buffer)
+(global-set-key (kbd "M-[") 'tab-bar-history-back)
+(global-set-key (kbd "M-]") 'tab-bar-history-forward)
 
 (global-set-key (kbd "C-c a") #'org-agenda)
 ;; C-c b org-switchb
 ;; C-c c org-capture
 ;; C-c d crux-duplicate-current-line-or-region
-;; C-c e crux-eval-and-replace
+;; C-c e envrc
 ;; C-c f crux-recentf-find-file
 ;; C-c g prelude-google
 ;; C-c h
