@@ -58,7 +58,7 @@
 (use-package org-runbook)
 
 (use-package code-review)
-(use-package inspector)
+;; (use-package inspector)
 
 (use-package use-package-ensure-system-package
   :ensure t)
@@ -221,12 +221,6 @@
 (require 'tree-sitter)
 (require 'tree-sitter-langs)
 
-(straight-use-package
- '(tree-sitter-indent :type git
-                      :repo "https://codeberg.org/FelipeLema/tree-sitter-indent.el.git"
-                      :branch "main"
-                      :files ("tree-sitter-indent.el")))
-
 (use-package protobuf-mode)
 (use-package projectile
   :config
@@ -326,7 +320,9 @@
   ;; Enable recursive minibuffers
   (setq enable-recursive-minibuffers t)
   (tab-bar-mode 1)
-  (tab-bar-history-mode))
+  (tab-bar-history-mode)
+  (setq enable-recursive-minibuffers t))
+
 (use-package marginalia
   ;; Either bind `marginalia-cycle` globally or only in the minibuffer
   :bind (("M-A" . marginalia-cycle)
@@ -556,6 +552,18 @@
   :after magit) ;; 
 (use-package flycheck
   :diminish flycheck-mode)
+(use-package flycheck-package
+  :after flycheck
+  :init
+  (flycheck-package-setup))
+
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
+
+(use-package dwim-shell-command)
+
 (use-package flycheck-clj-kondo)
 (use-package f)
 (use-package exec-path-from-shell
@@ -568,18 +576,8 @@
   (setq elfeed-feeds
       '("https://metaredux.com/feed.xml"
         ("https://blog.cleancoder.com/atom.xml" dev)
-        ("https://css-tricks.com/feed/" frontend)
-        ("http://nullprogram.com/feed/" blog emacs)
-        ;; ("https://www.reddit.com/r/Clojure/.rss" clojure)
-        ("https://golangnews.com/index.xml" golang)
-        ("https://changelog.com/gotime/feed" golang)
-        ("https://www.ardanlabs.com/blog/index.xml" golang)
-        ("https://www.cncf.io/feed" k8s)
-        ("https://kubernetes.io/feed.xml" k8s)
-        ("https://www.reddit.com/r/emacs/.rss" emacs)
-        ("https://www.reddit.com/r/Clojure/.rss" clojure)
-        ("https://www.reddit.com/r/emacs/.rss" emacs)
-        ("https://www.reddit.com/r/programming/.rss" programming)
+        ("http://nullprogram.com/feed/" emacs)
+        ("https://karthinks.com/index.xml" emacs)
         ("https://sachachua.com/blog/feed/" emacs)
         ("http://ergoemacs.org/emacs/blog.xml" emacs)
         ("https://emacsredux.com/feed.xml" emacs)
@@ -588,7 +586,11 @@
         ("https://200ok.ch/atom.xml" emacs)
         ("https://bzg.fr/index.xml" emacs)
         ("https://updates.orgmode.org/feed/help" org)
-        ("https://defn.io/index.xml" racket))))
+        ("https://defn.io/index.xml" racket)
+        ("https://emacstil.com/feed.xml" emacs)
+        ("https://ag91.github.io/rss.xml" emacs)
+        ("https://www.masteringemacs.org/feed" emacs)
+        ("http://pragmaticemacs.com/feed/" emacs))))
 (use-package editorconfig
   :diminish editorconfig-mode
   :init
@@ -1260,6 +1262,9 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 
 (use-package multiple-cursors)
 (use-package lispy)
+(use-package jupyter)
+(use-package ein)
+
 (load "~/.emacs.d/init-org.el")
 (load "~/.emacs.d/init-elisp.el")
 (load "~/.emacs.d/init-go.el")
