@@ -674,7 +674,7 @@
   (setq ef-themes-mixed-fonts t
         ef-themes-variable-pitch-ui t)
   :config
-  (ef-themes-select 'ef-night))
+  (ef-themes-select 'ef-bio))
 ;; (use-package poet-theme
 ;;   :config
 ;;   (load-theme 'poet))
