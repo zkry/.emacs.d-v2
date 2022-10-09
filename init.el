@@ -31,10 +31,13 @@
 (setq straight-use-package-by-default t)
 
 (use-package f)
+(use-package use-package-ensure-system-package
+  :ensure t)
+;; :bind (([remap async-shell-command] . dtache-shell-command)
+;;        :map dtache-shell-mode-map
+;;        ("C-c C-q" . dtache-detach-dwim)))
 
-  ;; :bind (([remap async-shell-command] . dtache-shell-command)
-  ;;        :map dtache-shell-mode-map
-  ;;        ("C-c C-q" . dtache-detach-dwim)))
+;;; org packages ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (use-package org
   :diminish org-table-header-line-mode)
@@ -54,57 +57,131 @@
           org-roam-ui-follow t
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
+(use-package org-runbook
+  :after mustache)
+(use-package ob-go)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Major Modes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; Programming ;;;;;
+(use-package clojure-mode
+  :ensure-system-package
+  (clojure-lsp . clojure-lsp/brew/clojure-lsp-native)
+  :config
+  (setq nrepl-log-messages t)
+  (setq lsp-enable-completion-at-point nil)
+  (setq prelude-clojure-mode-hook 'prelude-clojure-mode-defaults)
+  :hook ((clojure-mode . lsp)
+         (clojurescript-mode . lsp)
+         (clojurec-mode . lsp))
+  :init
+  (add-hook 'clojure-mode-hook (lambda ()
+                                 (run-hooks 'prelude-clojure-mode-hook))))
+(use-package cider
+  :config
+  (setq nrepl-log-messages t)
+  (setq prelude-cider-repl-mode-hook 'prelude-cider-repl-mode-defaults)
+  :hook ((cider-mode . eldoc-mode))
+  :init
+  (add-hook 'cider-repl-mode-hook
+            (lambda () (run-hooks 'prelude-cider-repl-mode-hook)))
+  ;; (add-hook 'cider-mode-hook
+  ;;           #'cider-setup-orderless)
+  )
+(use-package flycheck-clj-kondo)
+(use-package scss-mode)
+(use-package rjsx-mode)
+(use-package racket-mode)
+(use-package terraform-mode)
+(use-package typescript-mode
+  :mode (rx ".ts" string-end)
+  :init
+  (define-derived-mode typescript-tsx-mode typescript-mode "typescript-tsx")
+  (add-to-list 'auto-mode-alist (cons (rx ".tsx" string-end) #'typescript-tsx-mode)))
+(use-package protobuf-mode)
+(use-package go-mode
+  :hook (before-save . gofmt-before-save))
+(use-package lua-mode)
+(use-package php-mode)
+(use-package geiser
+  :config
+  (put 'fresh 'scheme-indent-function 1))
+(use-package elisp-slime-nav)
+;; (use-package tsx-mode
+;;   :straight (tsx-mode :type git :host github :repo "orzechowskid/tsx-mode.el"))
+(use-package tide)
+(defun my/setup-tide-mode ()
+  (interactive)
+  (when (string-equal "tsx" (file-name-extension buffer-file-name))
+    (lsp)
+    ;; (tide-setup)
+    (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))
+    (eldoc-mode +1)
+    ;; (tide-hl-identifier-mode +1)
+    ;; company is an optional dependency. You have to
+    ;; install it separately via package-install
+    ;; `M-x package-install [ret] company`
+    ;; (company-mode +1)
+    ))
+(use-package web-mode
+  :mode (("\\.html\\'" . web-mode)
+         ("\\.html\\.eex\\'" . web-mode)
+         ("\\.html\\.tera\\'" . web-mode)
+         ("\\.tsx\\'" . web-mode))
+  :init
+  (setq-default web-mode-indent-style 2
+                web-mode-code-indent-offset 4
+                web-mode-attr-indent-offset 2
+                web-mode-sql-indent-offset 2
+                web-mode-attr-value-indent-offset 2
+                web-mode-markup-indent-offset 2
+                web-mode-javascript-indentation 2)
+  :hook
+  ((web-mode . my/setup-tide-mode)
+   (web-mode . prettier-mode)))
+(use-package typescript-mode)
+(use-package prettier
+  :hook ((typescript-tsx-mode . prettier-mode)
+         (typescript-mode . prettier-mode)
+         (js-mode . prettier-mode)
+         (rjsx-mode . prettier-mode)
+         (json-mode . prettier-mode)
+         (css-mode . prettier-mode)
+         (scss-mode . prettier-mode)))
+(use-package rust-mode)
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
+(use-package jupyter)
+(use-package ein)
+
+
+;;; Text Editing ;;;;;
+;; (use-package mustache)
+(use-package markdown-mode)
+(use-package yaml-mode)
+(use-package json-mode)
+(use-package js2-mode)
+(use-package graphql-mode)
+(use-package graphviz-dot-mode
+  :ensure t
+  :config
+  (setq graphviz-dot-indent-width 4))
+(use-package dockerfile-mode)
+(use-package csv-mode)
+(use-package terraform-mode)
+(use-package wat-mode
+  :straight (wat-mode :type git :host github :repo "devonsparks/wat-mode"))
 (use-package mustache)
-(use-package org-runbook)
 
-(use-package code-review)
-;; (use-package inspector)
-
-(use-package use-package-ensure-system-package
-  :ensure t)
-
-(use-package ripgrep)
-(setq ripgrep-executable "/usr/local/bin/rg")
-
-(use-package deadgrep)
-
-(use-package rg
-  :init
-  (rg-enable-default-bindings))
-(setq rg-executable "/usr/local/bin/rg")
-
-(use-package crdt)
-
-(use-package diminish
-  :init
-  (diminish 'projectile-mode
-            '(:eval (format " Prj(%s)" (projectile-project-name)))))
-
-(defun avy-action-embark (pt)
-  (unwind-protect
-      (save-excursion
-        (goto-char pt)
-        (embark-act))
-    (select-window
-     (cdr (ring-ref avy-ring 0))))
-  t)
-
-(defun avy-action-eval (pt)
-  (unwind-protect
-      (save-excursion
-        (goto-char pt)
-        (if (looking-at "(")
-            (sp-forward-sexp)
-          (sp-up-sexp))
-        (cond
-         ((equal mode-name "EL")
-          (eval-last-sexp nil))
-         ((equal mode-name "Clojure")
-          (cider-eval-last-sexp))))
-    (select-window
-     (cdr (ring-ref avy-ring 0))))
-  t)
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Editing ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package avy
   :config
   (setq avy-keys '(?a ?r ?s ?t ?d ?h ?n ?e ?i ?o))
@@ -121,70 +198,39 @@
           (?v . avy-action-eval)))
   (setq avy-background t)
   (setq avy-style 'at-full))
-
-(use-package cider
-  :config
-  (setq nrepl-log-messages t)
-  (setq prelude-cider-repl-mode-hook 'prelude-cider-repl-mode-defaults)
-  :hook ((cider-mode . eldoc-mode))
-  :init
-  (add-hook 'cider-repl-mode-hook
-            (lambda () (run-hooks 'prelude-cider-repl-mode-hook)))
-  ;; (add-hook 'cider-mode-hook
-  ;;           #'cider-setup-orderless)
-  )
-
-(use-package clojure-mode
-  :ensure-system-package
-  (clojure-lsp . clojure-lsp/brew/clojure-lsp-native)
-  :config
-  (setq nrepl-log-messages t)
-  (setq lsp-enable-completion-at-point nil)
-  (setq prelude-clojure-mode-hook 'prelude-clojure-mode-defaults)
-  :hook ((clojure-mode . lsp)
-         (clojurescript-mode . lsp)
-         (clojurec-mode . lsp))
-  :init
-  (add-hook 'clojure-mode-hook (lambda ()
-                                 (run-hooks 'prelude-clojure-mode-hook))))
-
-(use-package request)
-(use-package markdown-mode)
-(use-package magit)
-(use-package lsp-mode
-  :config
-  (setq gc-cons-threshold 100000000
-      read-process-output-max (* 1024 1024)
-      treemacs-space-between-root-nodes nil
-      company-minimum-prefix-length 1
-      lsp-lens-enable t
-      lsp-signature-auto-activate nil
-      lsp-ui-sideline-enable nil))
-(use-package lsp-treemacs)
+(defun avy-action-embark (pt)
+  (unwind-protect
+      (save-excursion
+        (goto-char pt)
+        (embark-act))
+    (select-window
+     (cdr (ring-ref avy-ring 0))))
+  t)
+(defun avy-action-eval (pt)
+  (unwind-protect
+      (save-excursion
+        (goto-char pt)
+        (if (looking-at "(")
+            (sp-forward-sexp)
+          (sp-up-sexp))
+        (cond
+         ((equal mode-name "EL")
+          (eval-last-sexp nil))
+         ((equal mode-name "Clojure")
+          (cider-eval-last-sexp))))
+    (select-window
+     (cdr (ring-ref avy-ring 0))))
+  t)
 (use-package hydra)
 (use-package zop-to-char
   :init
-  (global-set-key [remap zap-to-char] 'zop-to-char)) ;; TODO: configure this
+  (global-set-key [remap zap-to-char] 'zop-to-char))
 (use-package yasnippet
   :diminish yas-minor-mode
   :init
   (yas-global-mode))
 (use-package yasnippet-snippets)
-(use-package which-key
-  :diminish which-key-mode
-  :init
-  (which-key-mode 1))
-(use-package yaml-mode)
-
-(use-package expand-region)
-;;; volatile-highlights ?
-
 (use-package turkish)
-
-(use-package super-save
-  :config
-  (add-to-list 'super-save-triggers 'ace-window)
-  (super-save-mode +1))
 (use-package smartparens
   :diminish smartparens-mode
   :config
@@ -199,142 +245,70 @@
   (show-smartparens-global-mode +1)
   :bind
   (("C-M-SPC" . sp-mark-sexp)))
-(use-package scss-mode)
-(use-package rjsx-mode)
-(use-package restclient)
-(use-package racket-mode)
-(use-package terraform-mode)
-
-(use-package typescript-mode
-  :mode (rx ".ts" string-end)
+;; (use-package puni
+;;   :inti)
+(use-package expand-region
+  :bind
+  (("C-=" . er/expand-region)))
+(use-package emmet-mode :ensure t :hook typescript-mode)
+(use-package hl-todo)
+(use-package flycheck
+  :diminish flycheck-mode)
+(use-package flycheck-package
+  :after flycheck
   :init
-  (define-derived-mode typescript-tsx-mode typescript-mode "typescript-tsx")
-  (add-to-list 'auto-mode-alist (cons (rx ".tsx" string-end) #'typescript-tsx-mode)))
-
-;; (use-package emmet-mode :ensure t :hook typescript-mode)
-(use-package tree-sitter
-  :hook (typescript-mode . tree-sitter-hl-mode)
+  (flycheck-package-setup))
+(use-package easy-kill
+  :init
+  (global-set-key [remap kill-ring-save] 'easy-kill)
+  (global-set-key [remap mark-sexp] 'easy-mark))
+(use-package diff-hl
+  :init
+  (global-diff-hl-mode +1)
+  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
+  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
+(use-package rainbow-mode)
+(use-package origami
+  :demand
   :config
-  (setf (alist-get 'typescript-tsx-mode tree-sitter-major-mode-language-alist) 'tsx))
-(use-package tree-sitter-langs :ensure t)
-;; (use-package prettier-js :ensure t :hook (typescript-mode))
-(require 'tree-sitter)
-(require 'tree-sitter-langs)
+  (define-prefix-command 'origami-mode-map)
+  (define-key ctl-x-map (kbd "z") 'origami-mode-map)
+  (global-origami-mode)
+  :bind
+  (:map origami-mode-map
+   ("o" . origami-open-node)
+   ("O" . origami-open-node-recursively)
+   ("c" . origami-close-node)
+   ("C" . origami-close-node-recursively)
+   ("a" . origami-toggle-node)
+   ("A" . origami-recursively-toggle-node)
+   ("R" . origami-open-all-nodes)
+   ("M" . origami-close-all-nodes)
+   ("v" . origami-show-only-node)
+   ("k" . origami-previous-fold)
+   ("j" . origami-forward-fold)
+   ("x" . origami-reset)))
+(use-package company)
+(use-package multiple-cursors)
+(use-package lispy)
 
-(use-package protobuf-mode)
-(use-package projectile
+;; end editing
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Tools ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package code-review)
+(use-package ripgrep
   :config
-  (setq projectile-cache-file (expand-file-name  "projectile.cache" prelude-savefile-dir))
+  (setq ripgrep-executable "/usr/local/bin/rg"))
+(use-package rg
   :init
-  (projectile-mode +1))
-(use-package package-lint)
-(use-package ob-go)
-(use-package lsp-ui)
-;;; (straight-use-package 'kubernetes)
-(use-package json-mode)
-(use-package js2-mode)
-
-(use-package vertico
-  :init
-  (vertico-mode))
-
-;; This is the function that breaks apart the pattern.  To signal that
-;; an element is a package prefix, we keep its trailing "/" and return
-;; the rest as another pattern.
-(defun cider-orderless-component-separator (pattern)
-  (if (cider-connected-p)
-      (let ((slash-idx (string-match-p "/" pattern)))
-        (if slash-idx
-            (append (list (substring pattern 0 (1+ slash-idx)))
-                    (split-string (substring pattern (1+ slash-idx)) " +" t))
-          (split-string pattern " +" t)))
-    (split-string pattern " +" t)))
-
-;; This is the function that takes our package prefix and ensures that
-;; it is at the beginning (note the "^" in the regex).
-(defun cider-orderless-package-prefix (component)
-  (format "\\(?:^%s\\)" (regexp-quote component)))
-
-;; This is the function that notices that the candidate ends in a "/"
-;; and that it should use our `cider-orderless-package-prefix'
-;; function for turning the candidate into a regex.
-(defun cider-package-prefix (pattern _index _total)
-  (when (and (cider-connected-p) (string-suffix-p "/" pattern))
-    'cider-orderless-package-prefix))
-
-(defun cider-setup-orderless ()
-  (setq orderless-style-dispatchers '(cider-package-prefix))
-  (add-to-list 'orderless-matching-styles #'cider-orderless-package-prefix)
-  (setq orderless-component-separator #'cider-orderless-component-separator))
-
-(use-package orderless
-  :init
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion)))))
-
-(use-package corfu
-  :custom
-  (corfu-cycle t)
-  (corfu-auto nil)
-  (corfu-separator ?\s)
-  (corfu-quit-at-boundary nil)
-  (corfu-quit-no-match 'separator)
-  (corfu-on-exact-match 'insert)
-  (corfu-scroll-margin 5)
-  
-  :init
-  (global-corfu-mode))
-
-(defun corfu-enable-in-minibuffer ()
-  "Enable Corfu in the minibuffer if `completion-at-point' is bound."
-  (when (where-is-internal #'completion-at-point (list (current-local-map)))
-    ;; (setq-local corfu-auto nil) Enable/disable auto completion
-    (corfu-mode 1)))
-(add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer)
-
-(use-package savehist
-  :init
-  (savehist-mode))
-(use-package emacs
-  :init
-  ;; Add prompt indicator to `completing-read-multiple'.
-  ;; Alternatively try `consult-completing-read-multiple'.
-  (defun crm-indicator (args)
-    (cons (concat "[CRM] " (car args)) (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-  (setq read-extended-command-predicate
-        #'command-completion-default-include-p)
-
-  ;; Do not allow the cursor in the minibuffer prompt
-  (setq minibuffer-prompt-properties
-        '(read-only t cursor-intangible t face minibuffer-prompt))
-  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
-  ;; Vertico commands are hidden in normal buffers.
-  (setq read-extended-command-predicate
-        #'command-completion-default-include-p)
-
-  ;; Enable recursive minibuffers
-  (setq enable-recursive-minibuffers t)
-  (tab-bar-mode 1)
-  (tab-bar-history-mode)
-  (setq enable-recursive-minibuffers t))
-
-(use-package marginalia
-  ;; Either bind `marginalia-cycle` globally or only in the minibuffer
-  :bind (("M-A" . marginalia-cycle)
-         :map minibuffer-local-map
-         ("M-A" . marginalia-cycle))
-
-  ;; The :init configuration is always executed (Not lazy!)
-  :init
-  ;; Must be in the :init section of use-package such that the mode gets
-  ;; enabled right away. Note that this forces loading the package.
-  (marginalia-mode))
-
+  (rg-enable-default-bindings)
+  (setq rg-executable "/usr/local/bin/rg"))
+(use-package deadgrep)
+(use-package crdt)
+(use-package magit)
+;; (use-package inspector)
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
   :bind (;; C-c bindings (mode-specific-map)
@@ -449,14 +423,12 @@
                    #'consult-completion-in-region
                  #'completion--in-region)
                args))))
-
 (use-package consult-dir
   :ensure t
   :bind (("C-x C-d" . consult-dir)
          :map vertico-map
          ("C-x C-d" . consult-dir)
          ("C-x C-j" . consult-dir-jump-file)))
-
 (defun consult-dir--tramp-docker-hosts ()
   "Get a list of hosts from docker."
   (when (require 'docker-tramp nil t)
@@ -468,7 +440,6 @@
               (host (car (cdr cand))))
           (push (concat "/docker:" user host ":/") hosts)))
       hosts)))
-
 (defvar consult-dir--source-tramp-docker
   `(:name     "Docker"
     :narrow   ?d
@@ -478,12 +449,13 @@
     :items    ,#'consult-dir--tramp-docker-hosts)
   "Docker candiadate source for `consult-dir'.")
 
-;; (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-docker t)
+(use-package consult-flycheck
+  :after lsp-mode)
 
-(use-package consult-flycheck)
 (use-package consult-lsp
   :config
-  (consult-lsp-marginalia-mode 1))
+  (consult-lsp-marginalia-mode 1)
+  :after (lsp-mode marginalia))
 
 (use-package embark
   :ensure t
@@ -514,10 +486,7 @@
   ;; auto-updating embark collect buffer
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
-
 (use-package wgrep)
-
-;;; (straight-use-package 'imenu-anywhere)
 (use-package ibuffer-projectile
   :init
   (add-hook 'ibuffer-hook
@@ -525,16 +494,7 @@
               (ibuffer-projectile-set-filter-groups)
               (unless (eq ibuffer-sorting-mode 'alphabetic)
                 (ibuffer-do-sort-by-alphabetic)))))
-
 (use-package html-to-hiccup)
-(use-package hl-todo)
-(use-package graphql-mode)
-(use-package go-mode
-  :hook (before-save . gofmt-before-save))
-(use-package gnuplot)
-(use-package gnuplot-mode)
-;; (use-package gitignore-mode)
-;; (use-package gitconfig-mode)
 (use-package git-timemachine)
 (use-package git-link
   :bind (:map
@@ -545,32 +505,9 @@
   :config
   (setq git-link-open-in-browser t))
 (use-package gist)
-(use-package geiser
-  :config
-  (put 'fresh 'scheme-indent-function 1))
 (use-package forge
-  :after magit) ;; 
-(use-package flycheck
-  :diminish flycheck-mode)
-(use-package flycheck-package
-  :after flycheck
-  :init
-  (flycheck-package-setup))
-
-(use-package graphviz-dot-mode
-  :ensure t
-  :config
-  (setq graphviz-dot-indent-width 4))
-
+  :after magit)
 (use-package dwim-shell-command)
-
-(use-package flycheck-clj-kondo)
-(use-package f)
-(use-package exec-path-from-shell
-  :if (memq window-system '(mac ns))
-  :init
-  (exec-path-from-shell-initialize))
-(use-package elisp-slime-nav)
 (use-package elfeed
   :config
   (setq elfeed-feeds
@@ -591,49 +528,6 @@
         ("https://ag91.github.io/rss.xml" emacs)
         ("https://www.masteringemacs.org/feed" emacs)
         ("http://pragmaticemacs.com/feed/" emacs))))
-(use-package editorconfig
-  :diminish editorconfig-mode
-  :init
-  (editorconfig-mode 1))
-(use-package easy-kill
-  :init
-  (global-set-key [remap kill-ring-save] 'easy-kill)
-  (global-set-key [remap mark-sexp] 'easy-mark))
-(use-package dockerfile-mode)
-(use-package docker-tramp)
-(use-package discover-my-major)
-
-(use-package diff-hl
-  :init
-  (global-diff-hl-mode +1)
-  (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
-  (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
-(use-package csv-mode)
-(use-package crux
-  :bind
-  (("C-a" . crux-move-beginning-of-line)))
-(use-package company-lsp)
-(use-package company-go)
-(use-package company
-  :diminish company-mode
-  :config
-  (setq company-idle-delay 0.5)
-  (setq company-show-numbers t)
-  (setq company-tooltip-limit 10)
-  (setq company-minimum-prefix-length 2)
-  (setq company-tooltip-align-annotations t)
-  (setq company-tooltip-flip-when-above t))
-(use-package flyspell
-  :diminish flyspell-mode
-  :config
-  (setq ispell-program-name "aspell" ; use aspell instead of ispell
-        ispell-extra-args '("--sug-mode=ultra"))
-  (unbind-key (kbd "C-.") flyspell-mode-map))
-(use-package pdf-tools)
-
-;;; (use-package clj-refactor)
-
-;;; (use-package browse-kill-ring)
 (use-package anzu
   :diminish anzu-mode
   :init
@@ -641,59 +535,12 @@
   :bind
   (("M-%" . anzu-query-replace)
    ("C-M-%" . anzu-query-replace-regexp)))
-(use-package alert)
-(use-package rainbow-mode)
 (use-package ace-window
   :bind
   ("M-o" . ace-window)
   :init
   (setq aw-keys '(?a ?r ?s ?t ?n ?e ?i ?o)))
-(use-package ag)
-;; (use-package zenburn-theme
-;;   :init
-;;   (load-theme 'zenburn t))
-;; (use-package modus-themes
-;;   :ensure
-;;   :init
-;;   (setq modus-themes-italic-constructs t
-;;         modus-themes-bold-constructs nil
-;;         modus-themes-region '(bg-only no-extend))
-;;   (modus-themes-load-themes)
-;;   :config
-;;   (modus-themes-load-vivendi)
-;;   :bind ("<f5" . modus-themes-toggle))
-;; (use-package ample-theme
-;;   :init (progn (load-theme 'ample t t)
-;;                (load-theme 'ample-flat t t)
-;;                (load-theme 'ample-light t t)
-;;                (enable-theme 'ample))
-;;   :defer t
-;;   :ensure t)
-(use-package ef-themes
-  :init
-  (setq ef-themes-mixed-fonts t
-        ef-themes-variable-pitch-ui t)
-  :config
-  (ef-themes-select 'ef-bio))
-;; (use-package poet-theme
-;;   :config
-;;   (load-theme 'poet))
-;; (use-package color-theme-sanityinc-tomorrow
-;;   :config
-;;   (color-theme-sanityinc-tomorrow-eighties))
-;; (use-package tao-theme
-;;   :config
-;;   (load-theme 'tao-yin))
-;; (use-package kaolin-themes
-;;   :config
-;;   (load-theme 'kaolin-dark t))
-;; (use-package leuven-theme
-;;   :init
-;;   (load-theme 'leuven t))
-;; (use-package subword
-;;   :diminish subword-mode)
-
- (use-package engine-mode
+(use-package engine-mode
 	:ensure t
 	:config
 	(defengine google "https://google.com/search?q=%s" :keybinding "g"
@@ -723,23 +570,10 @@
 	(defengine project-gutenberg "http://www.gutenberg.org/ebooks/search/?query=%s" :keybinding "p"
 	  :docstring "Search Project Gutenberg.")
 	(engine/set-keymap-prefix (kbd "C-x /"))
-	(setq engine/browser-function 'browse-url-firefox)
-    (setq browse-url-firefox-program "/Applications/Firefox.app/Contents/MacOS/firefox")
+    (setq browse-url-firefox-program "/Applications/Firefox\ Developer\ Edition.app/Contents/MacOS/firefox")
 	:init
 	(engine-mode t))
-
-
-
-;(use-package asm-blox)
 (use-package code-review)
-
-(use-package tree-sitter)
-(use-package tree-sitter-langs
-  :straight (tree-sitter-langs :type git :host github :repo "zkry/tree-sitter-langs"))
-(use-package tree-edit)
-(use-package evil-tree-edit)
-
-;;; Personal packages
 (use-package awqat
   :straight (awqat :type git :host github :repo "zkry/awqat")
   :config
@@ -754,81 +588,11 @@
   (setq awqat-isha-angle -16.3)
   (setq awqat-prayer-safety-offsets
         '(0.0 0.0 7.0 -9.0 0.0 0.0)))
-
-(use-package wat-mode
-  :straight (wat-mode :type git :host github :repo "devonsparks/wat-mode"))
-(use-package tide)
-
-(use-package typescript-mode)
-(defun my/setup-tide-mode ()
-  (interactive)
-  (when (string-equal "tsx" (file-name-extension buffer-file-name))
-    (lsp)
-    ;; (tide-setup)
-    (flycheck-mode +1)
-    (setq flycheck-check-syntax-automatically '(save mode-enabled))
-    (eldoc-mode +1)
-    ;; (tide-hl-identifier-mode +1)
-    ;; company is an optional dependency. You have to
-    ;; install it separately via package-install
-    ;; `M-x package-install [ret] company`
-    ))
-
-(use-package web-mode
-  :mode (("\\.html\\'" . web-mode)
-         ("\\.html\\.eex\\'" . web-mode)
-         ("\\.html\\.tera\\'" . web-mode)
-         ("\\.tsx\\'" . web-mode))
-  :init
-  (setq-default web-mode-indent-style 2
-                web-mode-code-indent-offset 4
-                web-mode-attr-indent-offset 2
-                web-mode-sql-indent-offset 2
-                web-mode-attr-value-indent-offset 2
-                web-mode-markup-indent-offset 2
-                web-mode-javascript-indentation 2)
-  :hook
-  ((web-mode . my/setup-tide-mode)
-   (web-mode . prettier-mode)))
-
 (use-package emms)
 (require 'emms-setup)
 (emms-all)
 (emms-default-players)
 (setq emms-source-file-default-directory "~/Downloads/Music/")
-(use-package prettier
-  :hook ((typescript-tsx-mode . prettier-mode)
-         (typescript-mode . prettier-mode)
-         (js-mode . prettier-mode)
-         (rjsx-mode . prettier-mode)
-         (json-mode . prettier-mode)
-         (css-mode . prettier-mode)
-         (scss-mode . prettier-mode)))
-
-;; (tree-sitter-require 'yaml)
-
-(use-package rust-mode)
-
-(use-package graphviz-dot-mode
-  :ensure t
-  :config
-  (setq graphviz-dot-indent-width 4))
-;; (define-derived-mode typescript-tsx-mode typescript-mode "tsx")
-;; (add-hook 'typescript-tsx-mode-hook #'tree-sitter-hl-mode)
-;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-tsx-mode . tsx))
-;; (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescript-tsx-mode))
-;;
-;; (add-hook
-;;  'typescript-mode-hook
-;;  (lambda ()
-;;    (setq-local font-lock-defaults '(()))
-;;    (tree-sitter-hl-mode 1)))
-;;
-;; (tree-sitter-require 'tsx)
-;; (add-to-list
-;;  'tree-sitter-major-mode-language-alist
-;;  '(typescript-mode . tsx))
-
 (use-package intentional
   :straight (intentional :type git :host github :repo "zkry/intentional.el")
   :config
@@ -859,6 +623,375 @@
           ("clojure" ("clojure"))))
   (setq intentional-save-to-journal nil)
   (setq intentional-extract-clock-body-urls t))
+;; end tools
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Utilities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(use-package diminish
+  :init
+  (diminish 'projectile-mode
+            '(:eval (format " Prj(%s)" (projectile-project-name)))))
+(use-package request)
+(use-package lsp-mode
+  :config
+  (setq gc-cons-threshold 100000000
+      read-process-output-max (* 1024 1024)
+      treemacs-space-between-root-nodes nil
+      company-minimum-prefix-length 1
+      lsp-lens-enable t
+      lsp-signature-auto-activate nil
+      lsp-ui-sideline-enable nil))
+;;(use-package company-lsp)
+(use-package lsp-treemacs)
+(use-package lsp-ui)
+(use-package which-key
+  :diminish which-key-mode
+  :init
+  (which-key-mode 1))
+(use-package super-save
+  :config
+  (add-to-list 'super-save-triggers 'ace-window)
+  (super-save-mode +1))
+(use-package atomic-chrome)
+(use-package tree-sitter
+  :hook (typescript-mode . tree-sitter-hl-mode)
+  :config
+  (setf (alist-get 'typescript-tsx-mode tree-sitter-major-mode-language-alist) 'tsx))
+;; (use-package tsi
+;;   :straight (tsi :type git :host github :repo "orzechowskid/tsi.el"))
+(use-package tree-edit)
+(use-package tree-sitter-langs :ensure t)
+(use-package projectile
+  :config
+  (setq projectile-cache-file (expand-file-name  "projectile.cache" prelude-savefile-dir))
+  :init
+  (projectile-mode +1))
+(use-package vertico
+  :init
+  (vertico-mode))
+(use-package orderless
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+
+(defun corfu-enable-in-minibuffer ()
+  "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+  (when (where-is-internal #'completion-at-point (list (current-local-map)))
+    ;; (setq-local corfu-auto nil) Enable/disable auto completion
+    (corfu-mode 1)))
+(use-package corfu
+  :custom
+  (corfu-cycle t)
+  (corfu-auto nil)
+  (corfu-separator ?\s)
+  (corfu-quit-at-boundary nil)
+  (corfu-quit-no-match 'separator)
+  (corfu-on-exact-match 'insert)
+  (corfu-scroll-margin 5)
+  
+  :init
+  (global-corfu-mode)
+  (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer))
+(use-package savehist
+  :init
+  (savehist-mode))
+(use-package marginalia
+  ;; Either bind `marginalia-cycle` globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
+(use-package gnuplot)
+(use-package gnuplot-mode)
+(use-package exec-path-from-shell
+  :if (memq window-system '(mac ns))
+  :init
+  (exec-path-from-shell-initialize))
+(use-package discover-my-major)
+(use-package docker-tramp)
+(use-package crux
+  :bind
+  (("C-a" . crux-move-beginning-of-line)))
+(use-package flyspell
+  :diminish flyspell-mode
+  :config
+  (setq ispell-program-name "aspell" ; use aspell instead of ispell
+        ispell-extra-args '("--sug-mode=ultra"))
+  (unbind-key (kbd "C-.") flyspell-mode-map))
+(use-package pdf-tools)
+
+;;; Elisp Programming
+(use-package package-lint)
+(use-package restclient)
+(use-package f)
+(use-package editorconfig
+  :diminish editorconfig-mode
+  :init
+  (editorconfig-mode 1))
+(use-package alert)
+(use-package ag)
+(use-package restclient)
+(use-package envrc
+  :init
+  (envrc-global-mode))
+(with-eval-after-load 'envrc
+  (define-key envrc-mode-map (kbd "C-c e") 'envrc-command-map))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Emacs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package emacs
+  :init
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; Alternatively try `consult-completing-read-multiple'.
+  (defun crm-indicator (args)
+    (cons (concat "[CRM] " (car args)) (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p)
+
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+  ;; Vertico commands are hidden in normal buffers.
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t)
+  (tab-bar-mode 1)
+  (tab-bar-history-mode)
+  (setq enable-recursive-minibuffers t))
+
+
+
+;;;;;;;;;;;;;
+;;; Themes
+;;;;;;;;;;;;;
+(use-package ef-themes
+  :init
+  (setq ef-themes-mixed-fonts t
+        ef-themes-variable-pitch-ui t)
+  :config
+  (ef-themes-select 'ef-bio))
+;; (use-package zenburn-theme
+;;   :init
+;;   (load-theme 'zenburn t))
+;; (use-package modus-themes
+;;   :ensure
+;;   :init
+;;   (setq modus-themes-italic-constructs t
+;;         modus-themes-bold-constructs nil
+;;         modus-themes-region '(bg-only no-extend))
+;;   (modus-themes-load-themes)
+;;   :config
+;;   (modus-themes-load-vivendi)
+;;   :bind ("<f5" . modus-themes-toggle))
+;; (use-package ample-theme
+;;   :init (progn (load-theme 'ample t t)
+;;                (load-theme 'ample-flat t t)
+;;                (load-theme 'ample-light t t)
+;;                (enable-theme 'ample))
+;;   :defer t
+;;   :ensure t)
+;; (use-package poet-theme
+;;   :config
+;;   (load-theme 'poet))
+;; (use-package color-theme-sanityinc-tomorrow
+;;   :config
+;;   (color-theme-sanityinc-tomorrow-eighties))
+;; (use-package tao-theme
+;;   :config
+;;   (load-theme 'tao-yin))
+;; (use-package kaolin-themes
+;;   :config
+;;   (load-theme 'kaolin-dark t))
+;; (use-package leuven-theme
+;;   :init
+;;   (load-theme 'leuven t))
+;; (use-package subword
+;;   :diminish subword-mode)
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Personal ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package youtube
+  :straight (youtube :type git :host github :repo "zkry/youtube.el")
+  :config
+  (setq youtube-storage-dir "~/.youtube/"))
+(use-package go-ttest
+  :straight (go-ttest :type git :host github :repo "zkry/go-ttest.el"))
+(use-package time-table
+  :straight (time-table :type git :host github :repo "zkry/time-table"))
+(use-package yaml
+  :straight (yaml :type git :host github :repo "zkry/yaml.el"))
+(use-package ag-plus
+  :straight (ag-plus :type git :host github :repo "zkry/ag-plus.el")
+  :hook (ag-mode . ag-plus-mode))
+;; (use-package prettier-js :ensure t :hook (typescript-mode))
+
+
+
+
+
+
+
+;;; (straight-use-package 'kubernetes)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;; (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-docker t)
+
+
+
+
+
+
+
+
+;;; (straight-use-package 'imenu-anywhere)
+
+
+
+
+
+
+
+;; (use-package gitignore-mode)
+;; (use-package gitconfig-mode)
+
+
+
+ ;; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;; (use-package company-go)
+;; (use-package company
+;;   :diminish company-mode
+;;   :config
+;;   (setq company-idle-delay 0.5)
+;;   (setq company-show-numbers t)
+;;   (setq company-tooltip-limit 10)
+;;   (setq company-minimum-prefix-length 2)
+;;   (setq company-tooltip-align-annotations t)
+;;   (setq company-tooltip-flip-when-above t))
+
+
+
+;;; (use-package clj-refactor)
+
+;;; (use-package browse-kill-ring)
+
+
+
+
+
+
+ 
+
+
+
+;(use-package asm-blox)
+
+
+
+
+
+
+
+
+;;; Personal packages
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;; (tree-sitter-require 'yaml)
+
+
+
+
+;; (define-derived-mode typescript-tsx-mode typescript-mode "tsx")
+;; (add-hook 'typescript-tsx-mode-hook #'tree-sitter-hl-mode)
+;; (add-to-list 'tree-sitter-major-mode-language-alist '(typescript-tsx-mode . tsx))
+;; (add-to-list 'auto-mode-alist '("\\.tsx?\\'" . typescript-tsx-mode))
+;;
+;; (add-hook
+;;  'typescript-mode-hook
+;;  (lambda ()
+;;    (setq-local font-lock-defaults '(()))
+;;    (tree-sitter-hl-mode 1)))
+;;
+;; (tree-sitter-require 'tsx)
+;; (add-to-list
+;;  'tree-sitter-major-mode-language-alist
+;;  '(typescript-mode . tsx))
+
+
 
 ;; Experimental
 
@@ -876,20 +1009,9 @@
 
 ;; Personal
 
-(use-package youtube
-  :straight (youtube :type git :host github :repo "zkry/youtube.el")
-  :config
-  (setq youtube-storage-dir "~/.youtube/"))
-(use-package go-ttest
-  :straight (go-ttest :type git :host github :repo "zkry/go-ttest.el"))
-(use-package time-table
-  :straight (time-table :type git :host github :repo "zkry/time-table"))
-(use-package yaml
-  :straight (yaml :type git :host github :repo "zkry/yaml.el"))
-(use-package ag-plus
-  :straight (ag-plus :type git :host github :repo "zkry/ag-plus.el")
-  :hook (ag-mode . ag-plus-mode))
-(use-package restclient)
+
+
+
 
 (defun file-notify-rm-all-watches ()
   "Remove all existing file notification watches from Emacs."
@@ -943,7 +1065,9 @@
 
 (defvar my/home-directory (getenv "HOME"))
 
-;;; Editor Configuration
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Editor Configuration ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package undo-tree
   :diminish undo-tree-mode
   :config
@@ -1074,6 +1198,9 @@
 (setenv "GOSUMDB" "off")
 (setenv "GOPATH" "/Users/zromero/go")
 (setenv "GOBIN" "/Users/zromero/go/bin")
+(setenv "MANPAGER" "cat")
+(setenv "PAGER" "cat")
+
 
 
 ;; frame display config
@@ -1094,15 +1221,12 @@
 (whitespace-mode 1)
 (add-hook 'before-save-hook 'zr/cleanup-maybe nil t)
 
-;; (diminish 'intentional-minor-mode)
-;; TODO - Install Intentional
 
-;; keybindings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; keybindings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (global-set-key (kbd "C-c p") #'projectile-command-map)
-
-
 (global-set-key (kbd "C-h C-f") #'find-function)
-
 (global-set-key (kbd "C-§ i") #'zr/open-init)
 (global-set-key (kbd "C-§ o") #'zr/open-organizer)
 (global-set-key (kbd "C-§ n") #'zr/open-notes)
@@ -1210,14 +1334,12 @@
 ;; (global-set-key (kbd "C-c a") 'counsel-ag)
 ;; (global-set-key (kbd "C-x l") 'counsel-locate)
 
-(use-package envrc
-  :init
-  (envrc-global-mode))
 
-(with-eval-after-load 'envrc
-  (define-key envrc-mode-map (kbd "C-c e") 'envrc-command-map))
 
-;;; Advice
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Advice ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defadvice set-buffer-major-mode (after set-major-mode activate compile)
   "Set buffer major mode according to `auto-mode-alist'."
   (let* ((name (buffer-name buffer))
@@ -1260,10 +1382,8 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
                                      (string-to-number (or (match-string 3 name) ""))))
                             fn))) files)))
 
-(use-package multiple-cursors)
-(use-package lispy)
-(use-package jupyter)
-(use-package ein)
+
+
 
 (load "~/.emacs.d/init-org.el")
 (load "~/.emacs.d/init-elisp.el")
@@ -1273,6 +1393,8 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
   (require 'init-private))
 (add-to-list 'load-path (concat my/home-directory "/dev/emacs/mu-1.6.10/mu4e"))
 (add-to-list 'load-path (concat my/home-directory "/dev/emacs/yaml"))
+(add-to-list 'load-path (concat my/home-directory "/dev/emacs/GIS-200"))
+(add-to-list 'load-path (concat my/home-directory "/dev/emacs/dtache"))
 (load "~/.emacs.d/init-mu4e.el")
 
 (require 'init-org)
@@ -1306,6 +1428,25 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
                  ('failure 'dtache-failure)))))
 (setq dtache-notification-function #'my/dtache-state-transition-notification)
 
+(add-to-list 'tramp-connection-properties
+             (list (regexp-quote "/ssh:root@147.182.236.138:")
+                   "login-args"
+                   '(("-l" "%u") ("-p" "%p") ("%c") ("-e" "none") ("-o" "StrictHostKeyChecking=no") ("-o" "UserKnownHostsFile=/dev/null") ("%h"))))
+
+(setq tramp-use-ssh-controlmaster-options nil)
+
+(let ((login-args (assoc 'tramp-login-args (assoc "ssh" tramp-methods)))
+      (new-value '((("-l" "%u")
+                    ("-p" "%p")
+                    ("%c")
+                    ("-e" "none")
+                    ("-o" "StrictHostKeyChecking=no")
+                    ("-o" "UserKnownHostsFile=/dev/null")
+                    ("%h")))))
+  (setcdr login-args new-value))
+
+
+
 (require 'dtache-consult)
 (require 'dtache-shell)
 
@@ -1322,8 +1463,11 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
  '(custom-safe-themes
    '("aba75724c5d4d0ec0de949694bce5ce6416c132bb031d4e7ac1c4f2dbdd3d580" "a44bca3ed952cb0fd2d73ff3684bda48304565d3eb9e8b789c6cca5c1d9254d1" "ea5822c1b2fb8bb6194a7ee61af3fe2cc7e2c7bab272cbb498a0234984e1b2d9" "d0fa4334234e97ece3d72d86e39a574f8256b4a8699a1fb5390c402892a1c024" default))
  '(debug-on-error t)
+ '(ein:output-area-inlined-images t)
  '(geiser-default-implementation 'mit)
  '(gofmt-command "goimports")
+ '(mailcap-prefer-mailcap-viewers nil)
+ '(mailcap-user-mime-data nil)
  '(native-comp-async-report-warnings-errors nil)
  '(org-display-remote-inline-images 'cache)
  '(org-duration-units
@@ -1340,11 +1484,72 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
  '(org-modules
    '(ol-bbdb ol-bibtex ol-docview ol-eww ol-gnus org-habit ol-info ol-irc ol-mhe ol-rmail ol-w3m))
  '(org-table-header-line-p t)
- '(package-selected-packages
-   '(clj-refactor perspective html-to-hiccup graphql package-lint racket-mode graphql-mode lsp-java f org-tree-slide deft org-journal org-download 2048-game ob-go ivy-youtube hyperbole alert ibuffer-projectile gnuplot gnuplot-mode forge kubernetes hy-mode csv-mode turkish elfeed lua-mode ample-theme ag scss-mode protobuf-mode flycheck-clj-kondo rjsx-mode groovy-mode org-pomodoro dockerfile-mode yasnippet yasnippet-snippets git-link yaml-mode geiser lsp-ui company-lsp json-mode js2-mode gotest go-projectile go-eldoc company-go go-mode rainbow-mode elisp-slime-nav cider clojure-mode rainbow-delimiters company counsel swiper ivy exec-path-from-shell zop-to-char zenburn-theme which-key volatile-highlights undo-tree super-save smartrep smartparens operate-on-number move-text magit projectile imenu-anywhere hl-todo guru-mode gitignore-mode gitconfig-mode git-timemachine gist flycheck expand-region epl editorconfig easy-kill diminish diff-hl discover-my-major crux browse-kill-ring beacon anzu ace-window))
  '(reb-re-syntax 'read)
  '(safe-local-variable-values
-   '((web-mode-javascript-indentation . 4)
+   '((eval when
+           (and
+            (buffer-file-name)
+            (not
+             (file-directory-p
+              (buffer-file-name)))
+            (string-match-p "^[^.]"
+                            (buffer-file-name)))
+           (unless
+               (require 'package-recipe-mode nil t)
+             (let
+                 ((load-path
+                   (cons "../package-build" load-path)))
+               (require 'package-recipe-mode)))
+           (unless
+               (derived-mode-p 'emacs-lisp-mode)
+             (emacs-lisp-mode))
+           (package-build-minor-mode)
+           (setq-local flycheck-checkers nil)
+           (set
+            (make-local-variable 'package-build-working-dir)
+            (expand-file-name "../working/"))
+           (set
+            (make-local-variable 'package-build-archive-dir)
+            (expand-file-name "../packages/"))
+           (set
+            (make-local-variable 'package-build-recipes-dir)
+            default-directory))
+     (elisp-lint-indent-specs
+      (if-let* . 2)
+      (when-let* . 1)
+      (let* . defun)
+      (nrepl-dbind-response . 2)
+      (cider-save-marker . 1)
+      (cider-propertize-region . 1)
+      (cider-map-repls . 1)
+      (cider--jack-in . 1)
+      (cider--make-result-overlay . 1)
+      (insert-label . defun)
+      (insert-align-label . defun)
+      (insert-rect . defun)
+      (cl-defun . 2)
+      (with-parsed-tramp-file-name . 2)
+      (thread-first . 0)
+      (thread-last . 0))
+     (elisp-lint-indent-specs
+      (if-let* . 2)
+      (when-let* . 1)
+      (let* . defun)
+      (nrepl-dbind-response . 2)
+      (cider-save-marker . 1)
+      (cider-propertize-region . 1)
+      (cider-map-repls . 1)
+      (cider--jack-in . 1)
+      (cider--make-result-overlay . 1)
+      (insert-label . defun)
+      (insert-align-label . defun)
+      (insert-rect . defun)
+      (cl-defun . 2)
+      (with-parsed-tramp-file-name . 2)
+      (thread-first . 1)
+      (thread-last . 1))
+     (checkdoc-package-keywords-flag)
+     (web-mode-javascript-indentation . 4)
      (web-mode-javascript-indentation . 2)
      (web-mode-indent-style . 2)
      (eval when
@@ -1379,10 +1584,11 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
      (cider-default-cljs-repl . shadow)
      (cider-ns-refresh-after-fn . "integrant.repl/resume")
      (cider-ns-refresh-before-fn . "integrant.repl/suspend")))
- '(time-table-default-time-zones '("America/Phoenix" "America/Chicago")))
+ '(time-table-default-time-zones '("America/Phoenix" "America/Chicago"))
+ '(warning-suppress-log-types '((comp))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :extend nil :stipple nil :background "#3F3F3F" :foreground "#DCDCCC" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "nil" :family "Hack")))))
+ )
