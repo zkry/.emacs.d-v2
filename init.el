@@ -60,6 +60,34 @@
 (use-package org-runbook
   :after mustache)
 (use-package ob-go)
+(use-package visual-fill-column)
+(defun my/org-present-start ()
+  (setq-local visual-fill-column-width 110
+              visual-fill-column-center-text t)
+  (visual-fill-column-mode 1)
+  (visual-line-mode 1)
+  ;; (set-face-attribute 'variable-pitch nil :font "Iosevka Aile" :weight 'light :height 1.0)
+  ;; (setq-local face-remapping-alist '((header-line (:height 4.0) variable-pitch)
+  ;;                                    (org-document-title (:height 1.75) org-document-title)
+  ;;                                    (org-code (:height 1.55) org-code)
+  ;;                                    (org-verbatim (:height 1.55) org-verbatim)
+  ;;                                    ; (org-block (:height 1.25) org-block)
+  ;;                                    (org-block-begin-line (:height 0.7) org-block)))
+  (setq-local org-hide-emphasis-markers t)
+  (setq-local header-line-format " ")
+  (tab-bar-mode 0))
+(add-hook 'image-minor-mode-hook #'auto-revert-mode)
+(defun my/org-present-end ()
+  (visual-fill-column-mode 0)
+  (visual-line-mode 0)
+  (setq-local face-remapping-alist nil)
+  (setq-local header-line-format nil)
+  (setq-local org-hide-emphasis-markers nil)
+  (tab-bar-mode 1))
+(use-package org-present
+  :init
+  (add-hook 'org-present-mode-hook 'my/org-present-start)
+  (add-hook 'org-present-mode-quit-hook 'my/org-present-end))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -96,6 +124,7 @@
 (use-package rjsx-mode)
 (use-package racket-mode)
 (use-package terraform-mode)
+
 (use-package typescript-mode
   :mode (rx ".ts" string-end)
   :init
@@ -104,6 +133,7 @@
 (use-package protobuf-mode)
 (use-package go-mode
   :hook (before-save . gofmt-before-save))
+(use-package gotest)
 (use-package lua-mode)
 (use-package php-mode)
 (use-package geiser
@@ -672,6 +702,7 @@
 (use-package vertico
   :init
   (vertico-mode))
+
 (use-package orderless
   :init
   (setq completion-styles '(orderless basic)
@@ -696,6 +727,7 @@
   :init
   (global-corfu-mode)
   (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer))
+
 (use-package savehist
   :init
   (savehist-mode))
@@ -1242,6 +1274,10 @@
 (global-set-key (kbd "s-d") #'crux-delete-file-and-buffer)
 (global-set-key (kbd "M-[") 'tab-bar-history-back)
 (global-set-key (kbd "M-]") 'tab-bar-history-forward)
+(global-set-key (kbd "C-S-c C-S-c") #'mc/edit-lines)
+(global-set-key (kbd "C->") #'mc/mark-next-like-this)
+(global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this)
 
 (global-set-key (kbd "C-c a") #'org-agenda)
 ;; C-c b org-switchb
@@ -1451,6 +1487,11 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 (require 'dtache-shell)
 
 (set-face-attribute 'default nil :family "Hack")
+;;(set-face-attribute 'default nil :family "DejaVu Sans Mono")
+;;(set-face-attribute 'default nil :family "Iosevka")
+;;(set-face-attribute 'default nil :family "JetBrains Mono")
+;;(set-face-attribute 'default nil :family "Monocraft")
+;; (set-face-attribute 'variable-pitch nil :font "Iosevka Aile" :weight 'light :height 1.0)
 
 ;;; init.el ends here
 (custom-set-variables
@@ -1486,7 +1527,10 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
  '(org-table-header-line-p t)
  '(reb-re-syntax 'read)
  '(safe-local-variable-values
-   '((eval when
+   '((vc-prepare-patches-separately)
+     (diff-add-log-use-relative-names . t)
+     (vc-git-annotate-switches . "-w")
+     (eval when
            (and
             (buffer-file-name)
             (not
@@ -1592,3 +1636,4 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(put 'list-threads 'disabled nil)

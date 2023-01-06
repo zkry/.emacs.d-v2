@@ -5,9 +5,11 @@
 (require 'projectile)
 (require 'lsp-go)
 (require 'go-mode)
+(require 'gotest)
 ;;(require 'ttest)
 
 (add-hook 'go-mode-hook 'lsp-deferred)
+(add-hook 'go-ts-mode-hook 'lsp-deferred)
 ;;(setq lsp-gopls-staticcheck t)
 (setq gofmt-command "goimports")
 
@@ -23,7 +25,6 @@
            (gomod-init-ok (call-process "go" nil nil nil "mod" "init")))
       (when (> gomod-init-ok 1) (error (concat "unable to init go mod in dir " dir-name)))
       (find-file (concat dir-name "/go.mod")))))
-
 
 (defun zr/projectile-command (cmd &rest args)
   (let ((default-directory (projectile-project-root)))
@@ -265,7 +266,10 @@ for _, tc := range testCases {
         ;;(yas-expand-snippet zr/go--ttable-snippet)
         ))))
 
-(add-hook 'go-mode-hook
+(add-to-list 'auto-mode-alist
+             '("\\.go\\'" . go-ts-mode))
+
+(add-hook 'go-ts-mode-hook
           (lambda ()
             ;; C-c C-a go-import-add
             (local-set-key (kbd "C-c C-b f") #'go-ttest-add-field)
@@ -304,14 +308,8 @@ for _, tc := range testCases {
             ;; C-c C-x
             ;; C-c C-y
             ;; C-c C-z
-
-
-
-
-
-
             ;; smartparens
-            (local-set-key (kbd "C-S-(") #'sp-slurp-hybrid-sexp)
+            (local-set-key (kbd "C-)") #'sp-slurp-hybrid-sexp)
             (local-set-key (kbd "C-M-t") #'sp-transpose-hybrid-sexp)
             (local-set-key (kbd "C-M-T") #'sp-push-hybrid-sexp)
             (local-set-key (kbd "<C-tab>") #'sp-indent-adjust-sexp)

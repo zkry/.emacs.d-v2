@@ -200,13 +200,14 @@
          "* TODO %?\n   %U\n   %l" :empty-lines 1)))
 
 (setq org-adapt-indentation t)
-(setq org-columns-default-format "%80ITEM(Task) %10Effort(Effort){:} %10CLOCKSUM")
+(setq org-columns-default-format "%80ITEM(Task) %11TODO %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-agenda-todo-ignore-deadlines nil)
 (setq org-agenda-files (list zr/organizer-file zr/tickler-file))
 (setq org-default-notes-file zr/refile-file)
 (setq org-adapt-indentation t)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
 (setq org-log-into-drawer t)
+(setq org-agenda-include-diary t)
 
 (add-hook 'org-mode-hook
           (lambda ()
@@ -214,6 +215,40 @@
             (local-set-key (kbd "s-<down>") #'org-move-subtree-down)
             (local-set-key (kbd "<M-S-return>") #'org-insert-todo-heading)
             (local-set-key (kbd "<C-S-return>") #'org-insert-todo-heading-respect-content)))
+
+
+(require 'org-faces)
+
+(dolist (face '((org-level-1 . 1.5)
+                (org-level-2 . 1.3)
+                (org-level-3 . 1.2)
+                (org-level-4 . 1.1)
+                (org-level-5 . 1.15)
+                (org-level-6 . 1.15)
+                (org-level-7 . 1.15)
+                (org-level-8 . 1.15)))
+  (set-face-attribute (car face) nil :font "Hack" :weight 'medium :height (cdr face)))
+(set-face-attribute 'org-document-title nil :font "Iosevka Aile" :weight 'bold :height 1.8)
+(set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+(set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+(set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+(set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+(set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+(set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+(set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+(set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+
+(defun org-clear-checklists-items-in-subtree ()
+  (interactive)
+  (let ((pt (point)))
+    (org-narrow-to-subtree)
+    (goto-char (point-min))
+    (while (search-forward "- [X]" nil t)
+      (backward-char 2)
+      (delete-char 1)
+      (insert " "))
+    (widen)
+    (goto-char pt)))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
@@ -223,7 +258,8 @@
    (shell . t)
    (ruby . t)
    (latex . t)
-   (scheme . t))) ; this line activates dot
+   (scheme . t)
+   (lilypond . t))) ; this line activates dot
 
 
 (defun org-current-is-todo ()
@@ -257,7 +293,9 @@
          ((agenda "" nil)
           (todo "INTR" nil)
           (todo "PROG" nil)
-          (todo "NEXT" nil))
+          (todo "NEXT" nil)
+          (tags "+assorted+TODO=\"NEXT\""
+                ((org-agenda-overriding-header "Next Assorted"))))
          nil)))
 
 ;; Old org agenda setup
@@ -330,6 +368,7 @@
 (global-set-key (kbd "C-c n i") #'org-roam-node-insert)
 (global-set-key (kbd "C-c n c") #'org-roam-capture)
 (global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
+(global-set-key (kbd "C-c n t") #'org-roam-dailies-find-today)
 (global-set-key (kbd "C-c n d") #'deft)
 (define-key org-mode-map (kbd "C-'") nil)
 
@@ -364,6 +403,12 @@
        (deft-directory org-roam-directory))
 
 (setq org-show-notification-handler #'message)
+(use-package org-anki
+  :bind
+  (:map org-mode-map
+        ("C-c f" . org-anki-sync-entry))
+  :init
+  (customize-set-variable 'org-anki-default-deck "org"))
 
 (provide 'init-org)
 
