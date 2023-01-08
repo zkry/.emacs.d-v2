@@ -674,6 +674,7 @@
       lsp-lens-enable t
       lsp-signature-auto-activate nil
       lsp-ui-sideline-enable nil))
+(use-package dap-mode)
 ;;(use-package company-lsp)
 (use-package lsp-treemacs)
 (use-package lsp-ui)

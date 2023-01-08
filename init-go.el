@@ -269,34 +269,48 @@ for _, tc := range testCases {
 (add-to-list 'auto-mode-alist
              '("\\.go\\'" . go-ts-mode))
 
+(defun gofmt-ts-before-save ()
+  (interactive)
+  (when (eq major-mode 'go-ts-mode) (gofmt)))
+(require 'dap-dlv-go)
 (add-hook 'go-ts-mode-hook
           (lambda ()
+            (add-hook 'before-save-hook #'gofmt-ts-before-save nil t)
             ;; C-c C-a go-import-add
             (local-set-key (kbd "C-c C-b f") #'go-ttest-add-field)
             (local-set-key (kbd "C-c C-b t") #'go-ttest)
             (local-set-key (kbd "C-c C-b a") #'go-ttest-add-test)
             ;; C-c C-c
             ;; C-c C-d godef-describe
-            (local-set-key (kbd "C-c C-e") #'zr/go-toggle-error)
+            (local-set-key (kbd "C-c C-e") #'go-sea-toggle-error-return)
             ;; C-c C-f go-goto-...
             ;; C-c C-g
             ;; C-c C-h
             ;; C-c C-i
             ;; C-c C-j
-            ;; C-c C-j godef-jump-...
+            (local-set-key (kbd "C-c C-j p") #'go-sea-jump-to-parameters)
+            (local-set-key (kbd "C-c C-j r") #'go-sea-jump-to-result)
+            (local-set-key (kbd "C-c C-j t") #'go-sea-jump-to-test)
+            ;; C-c C-k
             ;; C-c C-l
             ;; C-c C-m
             ;; C-c C-n
-            (local-set-key (kbd "C-c C-n")  #'zr/go-implement) ;; ???
+            (local-set-key (kbd "C-c C-n")  #'go-sea-implement-interface)
             ;; C-c C-o go-guru-...
             (local-set-key (kbd "C-c C-p v") #'zr/projectile-go-vet)
             (local-set-key (kbd "C-c C-p s") #'zr/projectile-go-staticcheck)
             ;; C-c C-q
-            ;; C-c C-r (ivy-resume)
+            ;; C-c C-r Refactoring ----------
+            (local-set-key (kbd "C-c C-r d") #'go-sea-demorgans-law)
+            (local-set-key (kbd "C-c C-r v") #'go-sea-toggle-var-declaration)
+            (local-set-key (kbd "C-c C-r i") #'go-sea-flip-if)
+            (local-set-key (kbd "C-c C-r e") #'go-sea-add-else)
+            (local-set-key (kbd "C-c C-r m") #'go-sea-refactor-move)
             ;; C-c C-s
+            ;; C-c C-t Tests ----------------
             (local-set-key (kbd "C-c C-t t") #'go-test-current-test)
             (local-set-key (kbd "C-c C-t b") #'go-test-current-benchmark)
-            (local-set-key (kbd "C-c C-t a") #'zr/go-add-test)
+            (local-set-key (kbd "C-c C-t a") #'go-sea-generate-test)
             (local-set-key (kbd "C-c C-t f") #'go-test-current-file)
             (local-set-key (kbd "C-c C-t C-f b") #'go-test-current-file-benchmarks)
             (local-set-key (kbd "C-c C-t p") #'go-test-current-project)
