@@ -270,6 +270,9 @@
   (setq sp-hybrid-kill-entire-symbol nil)
   (sp-use-paredit-bindings)
   (unbind-key (kbd "M-s") smartparens-mode-map)
+  (setq sp-ignore-modes-list nil)
+  (sp-local-pair 'minibuffer-inactive-mode "'" nil :actions nil)
+  (sp-local-pair 'minibuffer-mode "'" nil :actions nil)
   :init
   (smartparens-global-strict-mode t)
   (show-smartparens-global-mode +1)
@@ -412,7 +415,7 @@
   (advice-add #'register-preview :override #'consult-register-window)
 
   ;; Optionally replace `completing-read-multiple' with an enhanced version.
-  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+  ;; (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
 
   ;; Use Consult to select xref locations with preview
   (setq xref-show-xrefs-function #'consult-xref
@@ -687,10 +690,9 @@
   (add-to-list 'super-save-triggers 'ace-window)
   (super-save-mode +1))
 (use-package atomic-chrome)
-(use-package tree-sitter
-  :hook (typescript-mode . tree-sitter-hl-mode)
-  :config
-  (setf (alist-get 'typescript-tsx-mode tree-sitter-major-mode-language-alist) 'tsx))
+(use-package combobulate
+  :straight (combobulate :type git :host github :repo "mickeynp/combobulate"))
+
 ;; (use-package tsi
 ;;   :straight (tsi :type git :host github :repo "orzechowskid/tsi.el"))
 (use-package tree-edit)
