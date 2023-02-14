@@ -252,9 +252,11 @@
      (cdr (ring-ref avy-ring 0))))
   t)
 (use-package hydra)
-(use-package zop-to-char
+(use-package zzz-to-char
   :init
-  (global-set-key [remap zap-to-char] 'zop-to-char))
+  (global-set-key [remap zap-to-char] 'zzz-to-char))
+;; (use-package zop-to-char
+;;   )
 (use-package yasnippet
   :diminish yas-minor-mode
   :init
@@ -456,6 +458,17 @@
                    #'consult-completion-in-region
                  #'completion--in-region)
                args))))
+(use-package ligature
+  :config
+  (ligature-set-ligatures '(clojure-mode) '("#{" "#(" "#_(" "#_" "#?" "#:"
+                                            ";;" "~@"))
+  (ligature-set-ligatures '(go-mode) '(":="))
+  (ligature-set-ligatures t '("www"))
+  (ligature-set-ligatures '(html-mode web-mode rjsx-mode js2-mode)
+                          '("</" "<!--" "</>" "-->" "/>" "www"))
+  
+  ;;(global-ligature-mode)
+  )
 (use-package consult-dir
   :ensure t
   :bind (("C-x C-d" . consult-dir)
@@ -1489,7 +1502,8 @@ and file 'filename' will be opened and cursor set on line 'linenumber'"
 (require 'dtache-consult)
 (require 'dtache-shell)
 
-(set-face-attribute 'default nil :family "Hack")
+(set-face-attribute 'default nil :family "Berkeley Mono")
+;; (set-face-attribute 'default nil :family "Hack")
 ;;(set-face-attribute 'default nil :family "DejaVu Sans Mono")
 ;;(set-face-attribute 'default nil :family "Iosevka")
 ;;(set-face-attribute 'default nil :family "JetBrains Mono")
