@@ -60,6 +60,9 @@
 (use-package org-runbook
   :after mustache)
 (use-package ob-go)
+(use-package verb)
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c C-r") verb-command-map))
 (use-package visual-fill-column)
 (defun my/org-present-start ()
   (setq-local visual-fill-column-width 110
@@ -164,7 +167,7 @@
          ("\\.tsx\\'" . web-mode))
   :init
   (setq-default web-mode-indent-style 2
-                web-mode-code-indent-offset 4
+                web-mode-code-indent-offset 2
                 web-mode-attr-indent-offset 2
                 web-mode-sql-indent-offset 2
                 web-mode-attr-value-indent-offset 2
@@ -172,16 +175,37 @@
                 web-mode-javascript-indentation 2)
   :hook
   ((web-mode . my/setup-tide-mode)
-   (web-mode . prettier-mode)))
+   (web-mode . prettier-js-mode)))
+
+(use-package edraw
+  :straight (edraw-org :type git :host github :repo "misohena/el-easydraw")
+  :config
+  (require 'edraw-org)
+  (edraw-org-setup-default))
+
+(use-package gnuplot)
+
+  
 (use-package typescript-mode)
-(use-package prettier
-  :hook ((typescript-tsx-mode . prettier-mode)
-         (typescript-mode . prettier-mode)
-         (js-mode . prettier-mode)
-         (rjsx-mode . prettier-mode)
-         (json-mode . prettier-mode)
-         (css-mode . prettier-mode)
-         (scss-mode . prettier-mode)))
+;; (use-package prettier
+;;   :hook ((typescript-tsx-mode . prettier-mode)
+;;          (typescript-mode . prettier-mode)
+;;          (js-mode . prettier-mode)
+;;          (rjsx-mode . prettier-mode)
+;;          (json-mode . prettier-mode)
+;;          (css-mode . prettier-mode)
+;;          (scss-mode . prettier-mode)))
+
+(use-package prettier-js
+  :hook ((typescript-tsx-mode . prettier-js-mode)
+         (typescript-mode . prettier-js-mode)
+         (js-mode . prettier-js-mode)
+         (rjsx-mode . prettier-js-mode)
+         (json-mode . prettier-js-mode)
+         (css-mode . prettier-js-mode)
+         (scss-mode . prettier-js-mode)
+         (web-mode . prettier-js-mode)))
+
 (use-package rust-mode)
 (use-package graphviz-dot-mode
   :ensure t
@@ -333,6 +357,10 @@
 ;;; Tools ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (use-package code-review)
+(use-package code-review
+  :config
+  (setq code-review-auth-login-marker 'code-review))
+(use-package plantuml-mode)
 (use-package ripgrep
   :config
   (setq ripgrep-executable "/usr/local/bin/rg"))
@@ -343,6 +371,8 @@
 (use-package deadgrep)
 (use-package crdt)
 (use-package magit)
+(use-package magit-delta
+  :hook (magit-mode . magit-delta-mode))
 ;; (use-package inspector)
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
@@ -765,7 +795,6 @@
   :init
   (exec-path-from-shell-initialize))
 (use-package discover-my-major)
-(use-package docker-tramp)
 (use-package crux
   :bind
   (("C-a" . crux-move-beginning-of-line)))

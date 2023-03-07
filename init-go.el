@@ -4,6 +4,7 @@
 (require 'smartparens)
 (require 'projectile)
 (require 'lsp-go)
+(require 'go-sea)
 (require 'go-mode)
 (require 'gotest)
 ;;(require 'ttest)
@@ -267,22 +268,58 @@ for _, tc := range testCases {
         ))))
 
 (add-to-list 'auto-mode-alist
-             '("\\.go\\'" . go-ts-mode))
+             '("\\.go\\'" . go-ts-mode) t)
+
+(setq auto-mode-alist
+      (seq-remove
+       (lambda (item)
+         (equal item '("\\.go\\'" . go-mode)))
+       auto-mode-alist))
+
 
 (defun gofmt-ts-before-save ()
   (interactive)
-  (when (eq major-mode 'go-ts-mode) (gofmt)))
+  (when (eq major-mode 'go-ts-mode) (gofmt))
+  (when go-ts-alphebetize-imports
+    (zr/go-ts-alphabetize-imports)))
+
 (require 'dap-dlv-go)
+
+
+(defun zr/go-ts-alphabetize-imports ()
+  (interactive)
+  (save-excursion
+    (let* ((root-node (treesit-buffer-root-node))
+           (imports-node (alist-get 'spec-list
+                                    (treesit-query-capture root-node 
+                                                           '((import_declaration
+                                                              (import_spec_list) @spec-list))))))
+      (when imports-node
+        (let* ((capture (treesit-query-capture imports-node '((import_spec_list "(" @lparen ")" @rparen))))
+               (lparen-node (alist-get 'lparen capture))
+               (rparen-node (alist-get 'rparen capture))
+               (start (treesit-node-start lparen-node))
+               (end (treesit-node-end rparen-node)))
+          (sort-lines nil (+ start 2) (1- end))
+          (goto-char (+ start 2))
+          (while (looking-at "\n")
+            (delete-char 1)))))))
+
+
+
 (add-hook 'go-ts-mode-hook
           (lambda ()
             (add-hook 'before-save-hook #'gofmt-ts-before-save nil t)
             ;; C-c C-a go-import-add
+            (local-set-key (kbd "C-c C-a e") #'go-sea-toggle-error-return)
+            (local-set-key (kbd "C-c C-a r") #'go-sea-add-return-type)
+            
             (local-set-key (kbd "C-c C-b f") #'go-ttest-add-field)
             (local-set-key (kbd "C-c C-b t") #'go-ttest)
             (local-set-key (kbd "C-c C-b a") #'go-ttest-add-test)
             ;; C-c C-c
             ;; C-c C-d godef-describe
-            (local-set-key (kbd "C-c C-e") #'go-sea-toggle-error-return)
+            (local-set-key (kbd "C-c C-e") #'go-sea-insert-error)
             ;; C-c C-f go-goto-...
             ;; C-c C-g
             ;; C-c C-h
@@ -330,7 +367,14 @@ for _, tc := range testCases {
             (local-set-key (kbd "<C-M-tab>") #'sp-dedent-adjust-sexp)
 
             (local-set-key (kbd "C-c C-p v") #'zr/projectile-go-vet)
-            (local-set-key (kbd "C-c C-p s") #'zr/projectile-go-staticcheck)))
+            (local-set-key (kbd "C-c C-p s") #'zr/projectile-go-staticcheck)
+
+            (local-set-key (kbd "s-f s-f") #'go-sea-toggle-fold-at-line)
+            (local-set-key (kbd "s-f f") #'go-sea-fold-all-functions)
+            (local-set-key (kbd "s-f l") #'go-sea-fold-level)
+            (local-set-key (kbd "s-f u") #'go-sea-unfold-all)
+            ))
+
 
 (provide 'init-go)
 ;;; init-go.el ends here
