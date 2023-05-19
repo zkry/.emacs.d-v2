@@ -276,6 +276,7 @@ for _, tc := range testCases {
          (equal item '("\\.go\\'" . go-mode)))
        auto-mode-alist))
 
+(defvar go-ts-alphebetize-imports t)
 
 (defun gofmt-ts-before-save ()
   (interactive)
@@ -291,7 +292,7 @@ for _, tc := range testCases {
   (save-excursion
     (let* ((root-node (treesit-buffer-root-node))
            (imports-node (alist-get 'spec-list
-                                    (treesit-query-capture root-node 
+                                    (treesit-query-capture root-node
                                                            '((import_declaration
                                                               (import_spec_list) @spec-list))))))
       (when imports-node
@@ -313,7 +314,7 @@ for _, tc := range testCases {
             ;; C-c C-a go-import-add
             (local-set-key (kbd "C-c C-a e") #'go-sea-toggle-error-return)
             (local-set-key (kbd "C-c C-a r") #'go-sea-add-return-type)
-            
+
             (local-set-key (kbd "C-c C-b f") #'go-ttest-add-field)
             (local-set-key (kbd "C-c C-b t") #'go-ttest)
             (local-set-key (kbd "C-c C-b a") #'go-ttest-add-test)

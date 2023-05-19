@@ -2,12 +2,18 @@
 (require 'js)
 (require 'sgml-mode)
 (require 'smartparens)
-(add-to-list 'auto-mode-alist '(".*\\.js\\'" . rjsx-mode))
+(add-to-list 'auto-mode-alist '(".*\\.js\\'" . js-ts-mode))
+(add-to-list 'auto-mode-alist '(".*\\.ts\\'" . typescript-ts-mode))
+(add-to-list 'auto-mode-alist '(".*\\.tsx\\'" . tsx-ts-mode))
 
 (setq js-indent-level 4
       sgml-basic-offset 2)
 
 (add-hook 'rjsx-mode-hook 'lsp)
+(add-hook 'typescript-ts-mode-hook 'lsp)
+(add-hook 'tsx-ts-mode-hook 'prettier-js-mode)
+(add-hook 'typescript-ts-mode-hook 'prettier-js-mode)
+
 (add-hook 'rjsx-mode-hook
           (lambda ()
             (local-set-key (kbd "C-S-(") #'sp-slurp-hybrid-sexp)
