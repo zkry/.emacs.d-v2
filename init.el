@@ -409,6 +409,12 @@
 
 
 ;;; Tools ;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package chatgpt-shell
+  :ensure t
+  :custom
+  ((chatgpt-shell-openai-key
+    (lambda ()
+      (auth-source-pick-first-password :host "api.openai.com")))))
 (use-package eglot
   :hook ((go-ts-mode . eglot-ensure)
          (tsx-ts-mode . eglot-ensure)
@@ -844,3 +850,168 @@
 (set-face-attribute 'default nil :family "Berkeley Mono")
 
 ;;; init.el ends here
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(calendar-holidays
+   '((holiday-fixed 1 1 "New Year's Day")
+     (holiday-float 1 1 3 "Martin Luther King Day")
+     (holiday-fixed 2 2 "Groundhog Day")
+     (holiday-fixed 2 14 "Valentine's Day")
+     (holiday-float 2 1 3 "President's Day")
+     (holiday-fixed 3 17 "St. Patrick's Day")
+     (holiday-fixed 4 1 "April Fools' Day")
+     (holiday-float 5 0 2 "Mother's Day")
+     (holiday-float 5 1 -1 "Memorial Day")
+     (holiday-fixed 6 14 "Flag Day")
+     (holiday-float 6 0 3 "Father's Day")
+     (holiday-fixed 7 4 "Independence Day")
+     (holiday-float 9 1 1 "Labor Day")
+     (holiday-float 10 1 2 "Columbus Day")
+     (holiday-fixed 10 31 "Halloween")
+     (holiday-fixed 11 11 "Veteran's Day")
+     (holiday-float 11 4 4 "Thanksgiving")
+     (holiday-easter-etc)
+     (holiday-fixed 12 25 "Christmas")
+     (if calendar-christian-all-holidays-flag
+         (append
+          (holiday-fixed 1 6 "Epiphany")
+          (holiday-julian 12 25 "Christmas (Julian calendar)")
+          (holiday-greek-orthodox-easter)
+          (holiday-fixed 8 15 "Assumption")
+          (holiday-advent 0 "Advent")))
+     (if calendar-hebrew-all-holidays-flag
+         (append
+          (holiday-hebrew-tisha-b-av)
+          (holiday-hebrew-misc)))
+     (holiday-islamic-new-year)
+     (holiday-islamic 9 1 "Ramadan Begins")
+     (if calendar-islamic-all-holidays-flag
+         (append
+          (holiday-islamic 1 10 "Ashura")
+          (holiday-islamic 3 12 "Mulad-al-Nabi")
+          (holiday-islamic 7 26 "Shab-e-Mi'raj")
+          (holiday-islamic 8 15 "Shab-e-Bara't")
+          (holiday-islamic 9 27 "Shab-e Qadr")
+          (holiday-islamic 10 1 "Id-al-Fitr")
+          (holiday-islamic 12 10 "Id-al-Adha")))
+     (if calendar-bahai-all-holidays-flag
+         (append
+          (holiday-fixed 11 26 "Day of the Covenant")
+          (holiday-fixed 11 28 "Ascension of `Abdu’l-Bahá")))
+     (holiday-chinese-new-year)
+     (if calendar-chinese-all-holidays-flag
+         (append
+          (holiday-chinese 1 15 "Lantern Festival")
+          (holiday-chinese-qingming)
+          (holiday-chinese 5 5 "Dragon Boat Festival")
+          (holiday-chinese 7 7 "Double Seventh Festival")
+          (holiday-chinese 8 15 "Mid-Autumn Festival")
+          (holiday-chinese 9 9 "Double Ninth Festival")
+          (holiday-chinese-winter-solstice)))
+     (solar-equinoxes-solstices)
+     (holiday-sexp calendar-daylight-savings-starts
+                   (format "Daylight Saving Time Begins %s"
+                           (solar-time-string
+                            (/ calendar-daylight-savings-starts-time
+                               (float 60))
+                            calendar-standard-time-zone-name)))
+     (holiday-sexp calendar-daylight-savings-ends
+                   (format "Daylight Saving Time Ends %s"
+                           (solar-time-string
+                            (/ calendar-daylight-savings-ends-time
+                               (float 60))
+                            calendar-daylight-time-zone-name)))))
+ '(connection-local-criteria-alist
+   '(((:application tramp :machine "localhost")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp :machine "MacBook-Pro.local")
+      tramp-connection-local-darwin-ps-profile)
+     ((:application tramp)
+      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)
+     ((:application eshell)
+      eshell-connection-default-profile)))
+ '(connection-local-profile-alist
+   '((tramp-connection-local-darwin-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . tramp-ps-time)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-busybox-ps-profile
+      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (user . string)
+       (group . string)
+       (comm . 52)
+       (state . 5)
+       (ppid . number)
+       (pgrp . number)
+       (ttname . string)
+       (time . tramp-ps-time)
+       (nice . number)
+       (etime . tramp-ps-time)
+       (args)))
+     (tramp-connection-local-bsd-ps-profile
+      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
+      (tramp-process-attributes-ps-format
+       (pid . number)
+       (euid . number)
+       (user . string)
+       (egid . number)
+       (group . string)
+       (comm . 52)
+       (state . string)
+       (ppid . number)
+       (pgrp . number)
+       (sess . number)
+       (ttname . string)
+       (tpgid . number)
+       (minflt . number)
+       (majflt . number)
+       (time . tramp-ps-time)
+       (pri . number)
+       (nice . number)
+       (vsize . number)
+       (rss . number)
+       (etime . number)
+       (pcpu . number)
+       (pmem . number)
+       (args)))
+     (tramp-connection-local-default-shell-profile
+      (shell-file-name . "/bin/sh")
+      (shell-command-switch . "-c"))
+     (tramp-connection-local-default-system-profile
+      (path-separator . ":")
+      (null-device . "/dev/null"))
+     (eshell-connection-default-profile
+      (eshell-path-env-list))))
+ '(holiday-bahai-holidays nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
