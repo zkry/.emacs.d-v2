@@ -641,7 +641,8 @@
   (exec-path-from-shell-initialize))
 (use-package crux
   :bind
-  (("C-a" . crux-move-beginning-of-line)))
+  (("C-a" . crux-move-beginning-of-line)
+   ("s-k" . crux-kill-whole-line)))
 (use-package savehist
   :elpaca nil
   :init
@@ -753,18 +754,17 @@
 (global-set-key (kbd "s-u") #'revert-buffer)
 
 ;; to be added:
-;; (global-set-key (kbd "<C-M-backspace>") #'sp-splice-sexp-killing-backward)
-;; (global-set-key (kbd "C-M-]") #'sp-rewrap-sexp)
-;; (global-set-key (kbd "C-M-SPC") #'sp-mark-sexp)
-;; (global-set-key (kbd "s-k") #'crux-kill-whole-line)
+(global-set-key (kbd "<C-M-backspace>") #'sp-splice-sexp-killing-backward)
+(global-set-key (kbd "C-M-]") #'sp-rewrap-sexp)
+(global-set-key (kbd "C-M-SPC") #'sp-mark-sexp)
 ;; (global-set-key (kbd "s-d") #'crux-delete-file-and-buffer)
-;; (global-set-key (kbd "C-S-c C-S-c") #'mc/edit-lines)
-;; (global-set-key (kbd "C->") #'mc/mark-next-like-this)
-;; (global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
-;; (global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this)
-;; (global-set-key (kbd "C-'") #'avy-goto-char-timer)
-;; (global-set-key (kbd "M-g f") #'avy-goto-line)
-;; (global-set-key (kbd "M-g w") #'avy-goto-word-1)
+(global-set-key (kbd "C-S-c C-S-c") #'mc/edit-lines)
+(global-set-key (kbd "C->") #'mc/mark-next-like-this)
+(global-set-key (kbd "C-<") #'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") #'mc/mark-all-like-this)
+(global-set-key (kbd "C-'") #'avy-goto-char-timer)
+(global-set-key (kbd "M-g f") #'avy-goto-line)
+(global-set-key (kbd "M-g w") #'avy-goto-word-1)
 ;; (global-set-key (kbd "<f5>") #'deadgrep)
 
 ;; binding notes:
