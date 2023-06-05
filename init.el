@@ -846,6 +846,7 @@
 (load-file "~/.emacs.d/init-js.el")
 (load-file "~/.emacs.d/init-go.el")
 (load-file "~/.emacs.d/init-mu4e.el")
+(load-file "~/.emacs.d/colemak-russian.el")
 
 (set-face-attribute 'default nil :family "Berkeley Mono")
 
