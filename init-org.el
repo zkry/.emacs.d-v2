@@ -49,14 +49,41 @@
 
 (setq org-roam-v2-ack t)
 
-(defvar zr/org-directory "/Users/zromero/Dropbox/org/")
+(defvar zr/org-directory "/Users/zachary.romero/org/")
 
 (defun zr/org-file (path)
   (concat zr/org-directory path))
+(use-package org-roam
+  :ensure t
+  :custom
+  (org-roam-directory (file-truename "~/org/roam"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture)
+         ;; Dailies
+         ("C-c n j" . org-roam-dailies-capture-today)
+         :map org-roam-mode-map
+         ("C-c n j" . org-journal-new-entry)
+         ("C-c n a t" . org-roam-dailies-capture-today)
+         ("C-c n a y" . org-roam-dailies-capture-yesterday)
+         ("C-c n a m" . org-roam-dailies-capture-tomorrow)
+         ("C-c n a w" . org-roam-dailies-capture-this-week)
+         ("C-c n l" . org-roam)
+         ("C-c n f" . org-roam-find-file)
+         ("C-c n g" . org-roam-graph))
+  :config
+  (setq org-roam-v2-ack t)
+  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (setq org-roam-directory "~/org/roam")
+  (org-roam-db-autosync-mode)
+  (org-roam-setup))
+
 
 (defvar zr/refile-file (zr/org-file "refile.org"))
-(defvar zr/notes-file (zr/org-file "notesV2.org"))
-(defvar zr/organizer-file (zr/org-file "organizerV2.org"))
+(defvar zr/notes-file (zr/org-file "notes.org"))
+(defvar zr/organizer-file (zr/org-file "organizer.org"))
 (defvar zr/tickler-file (zr/org-file "tickler.org"))
 
 (defun zr/open-init ()
@@ -160,10 +187,6 @@
 (add-hook 'org-pomodoro-finished-hook 'zr/org-pomodoro-delete-bitbar-file)
 (add-hook 'org-pomodoro-break-finished-hook 'zr/org-pomodoro-delete-bitbar-file)
 
-(setq org-pomodoro-finished-sound "/Users/zromero/dev/emacs/alarm.wav")
-(setq org-pomodoro-short-break-sound "/Users/zromero/dev/emacs/positive-blip.wav")
-(setq org-pomodoro-long-break-sound "/Users/zromero/dev/emacs/positive-blip.wav")
-
 (add-hook 'org-clock-in-hook 'zr/org-clock-start-timer)
 (add-hook 'org-clock-out-hook 'zr/org-clock-stop-timer)
 
@@ -224,7 +247,7 @@
 (setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %11TODO %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-agenda-todo-ignore-deadlines nil)
-(setq org-agenda-files (list zr/organizer-file zr/tickler-file))
+(setq org-agenda-files (list zr/organizer-file zr/tickler-file "~/org/calendar.org"))
 (setq org-default-notes-file zr/refile-file)
 (setq org-adapt-indentation t)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
@@ -281,8 +304,10 @@
    (ruby . t)
    (latex . t)
    (scheme . t)
-   (lilypond . t))) ; this line activates dot
-
+   (lilypond . t)
+   (R . t)
+   (latex . t))) ; this line activates dot
+(setq org-confirm-babel-evaluate nil)
 
 (defun org-current-is-todo ()
   (string= "TODO" (org-get-todo-state)))
@@ -354,6 +379,10 @@
         nil
         ""))
 
+(setq org-plantuml-jar-path (expand-file-name "~/Downloads/plantuml-1.2023.1.jar"))
+(add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
+(org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)))
+
 (require 'ox-latex)
 (require 'ox-texinfo)
 (add-to-list 'org-latex-packages-alist '("" "minted"))
@@ -375,7 +404,6 @@
 
 (setq org-id-link-to-org-use-id t)
 
-(require 'org-roam)
 (add-to-list 'display-buffer-alist
                   '("\\*org-roam\\*"
                     (display-buffer-in-direction)
@@ -383,7 +411,7 @@
                     (window-width . 0.33)
                     (window-height . fit-window-to-buffer)))
 (setq org-roam-directory (zr/org-file "roam"))
-(org-roam-setup)
+
 (global-set-key (kbd "C-c n l") #'org-roam-buffer-toggle)
 (global-set-key (kbd "C-c n f") #'org-roam-node-find)
 (global-set-key (kbd "C-c n g") #'org-roam-graph)
@@ -394,16 +422,9 @@
 (global-set-key (kbd "C-c n d") #'deft)
 (define-key org-mode-map (kbd "C-'") nil)
 
-(define-key org-roam-mode-map (kbd "C-c n a t") #'org-roam-dailies-capture-today)
-(define-key org-roam-mode-map (kbd "C-c n a y") #'org-roam-dailies-capture-yesterday)
-(define-key org-roam-mode-map (kbd "C-c n a m") #'org-roam-dailies-capture-tomorrow)
-(define-key org-roam-mode-map (kbd "C-c n a w") #'org-roam-dailies-capture-this-week)
-(define-key org-roam-mode-map (kbd "C-c n l") #'org-roam)
-(define-key org-roam-mode-map (kbd "C-c n f") #'org-roam-find-file)
-(define-key org-roam-mode-map (kbd "C-c n g") #'org-roam-graph)
 
 (require 'org-journal)
-(define-key org-roam-mode-map (kbd "C-c n j") #'org-journal-new-entry)
+
 (setq org-journal-date-prefix "#+title: "
       org-journal-file-format "%Y-%m-%d.org"
       org-journal-dir (zr/org-file "roam/daily/")

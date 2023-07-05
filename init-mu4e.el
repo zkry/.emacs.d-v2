@@ -1,4 +1,6 @@
 (require 'mu4e)
+(require 'mu4e-icalendar)
+(mu4e-icalendar-setup)
 (setq
  mue4e-headers-skip-duplicates t
  mu4e-view-show-images t
@@ -12,18 +14,18 @@
  mu4e-maildir       "~/Maildir"   ;; top-level Maildir
  ;; note that these folders below must start with /
  ;; the paths are relative to maildir root
- mu4e-refile-folder "/Archive"
- mu4e-sent-folder   "/Sent"
- mu4e-drafts-folder "/Drafts"
- mu4e-trash-folder  "/Trash")
+ mu4e-refile-folder "/[Gmail].All Mail"
+ mu4e-sent-folder   "/[Gmail].Sent Mail"
+ mu4e-drafts-folder "/[Gmail].Drafts"
+ mu4e-trash-folder  "/[Gmail].Trash")
 
-(setq mu4e-get-mail-command  "mbsync -a")
+(setq mu4e-get-mail-command  "offlineimap")
 (setq mu4e-attachment-dir "~/Downloads")
 
-(require 'smtpmail)
-(setq message-send-mail-function 'smtpmail-send-it)
-(setq user-mail-address "zacromero@posteo.net"
-      smtpmail-smtp-server "posteo.de"
-      smtpmail-default-smtp-server "posteo.de"
+;; (require 'smtpmail)
+;; (setq message-send-mail-function 'smtpmail-send-it)
+(setq user-mail-address "zachary.romero@blueprintprep.com"
+      smtpmail-smtp-server "smtp.gmail.com"
+      smtpmail-default-smtp-server "smtp.gmail.com"
       smtpmail-smtp-service 587)
 (provide 'init-mu4e)
