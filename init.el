@@ -195,6 +195,20 @@
   :config
   (with-eval-after-load 'org
     (define-key org-mode-map (kbd "C-c C-r") verb-command-map)))
+(defun graphql-to-json (rs)
+  ;; Modify RS and return it (RS is a request specification, type `verb-request-spec')
+  ;; TODO: remove newlines
+  (let ((body (oref rs body)))
+    (if (string-match-p "#\\+NAME: *input" body)
+        (let* ((parts (split-string body "#\\+NAME: *input"))
+               (input (alist-get 'input (json-parse-string (cadr parts) :object-type 'alist)))
+               (input-string (json-encode input)))
+          (oset rs body
+                (format "{\"query\": \"%s\", \"variables\": {\"input\": %s}}"
+                                (string-replace "\n" "\\n" (car parts))
+                                input-string)))
+      (oset rs body (format "{\"query\": \"%s\"}" (string-replace "\n" "\\n" body))))
+    rs))
 (use-package org-pomodoro
   :config
   (setq org-pomodoro-start-sound (file-truename "~/Documents/alert2.wav"))
