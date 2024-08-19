@@ -16,24 +16,6 @@
 (use-package org-pomodoro)
 (use-package org-journal)
 (use-package org-download)
-(use-package org-roam
-  :ensure t
-  :custom
-  (org-roam-directory (file-truename "/path/to/org-files/"))
-  :bind (("C-c n l" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n g" . org-roam-graph)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture)
-         ;; Dailies
-         ("C-c n j" . org-roam-dailies-capture-today))
-  :config
-  ;; If you're using a vertical completion framework, you might want a more informative completion interface
-  (setq org-roam-directory "/Users/zromero/Dropbox/org/roam")
-  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-  (org-roam-db-autosync-mode)
-  ;; If using org-roam-protocol
-  (require 'org-roam-protocol))
 
 (elpaca-wait)
 (setq calendar-islamic-all-holidays-flag t)
@@ -45,18 +27,20 @@
 (require 'org-habit)
 (require 'org-duration)
 
+(server-start)
 (require 'org-protocol)
 
 (setq org-roam-v2-ack t)
 
-(defvar zr/org-directory "/Users/zachary.romero/org/")
+(defvar zr/org-directory "~/org-workspace/")
 
 (defun zr/org-file (path)
   (concat zr/org-directory path))
+
 (use-package org-roam
   :ensure t
   :custom
-  (org-roam-directory (file-truename "~/org/roam"))
+  (org-roam-directory (file-truename "~/org-workspace/roam"))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
          ("C-c n g" . org-roam-graph)
@@ -76,15 +60,14 @@
   :config
   (setq org-roam-v2-ack t)
   (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-  (setq org-roam-directory "~/org/roam")
   (org-roam-db-autosync-mode)
   (org-roam-setup))
 
 
-(defvar zr/refile-file (zr/org-file "refile.org"))
-(defvar zr/notes-file (zr/org-file "notes.org"))
-(defvar zr/organizer-file (zr/org-file "organizer.org"))
-(defvar zr/tickler-file (zr/org-file "tickler.org"))
+(defconst zr/refile-file (zr/org-file "capture.org"))
+(defconst zr/notes-file (zr/org-file "notes.org"))
+(defconst zr/organizer-file (zr/org-file "gtd.org"))
+(defconst zr/tickler-file (zr/org-file "calendar.org"))
 
 (defun zr/open-init ()
   (interactive)
@@ -218,10 +201,13 @@
 (define-key org-mode-map (kbd "C-c C-x C-m") #'org-pomodoro)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "INTR(i)" "|" "DONE(d)" "CANCELLED(c)")))
+      '((sequence "TODO(t)" "NEXT(n)" "WAIT(w)" "|" "DONE(d)" "CANCELLED(c)")))
 
 ;; Show the daily agenda by default
 (setq org-agenda-span 'day)
+
+;; List of tags that should be attached to the project but are irrelevant for task
+(setq org-tags-exclude-from-inheritance '("aof" "operational"))
 
 ;; Hide tasks that are scheduled in the future
 (setq org-agenda-todo-ignore-scheduled 'future)
@@ -247,7 +233,7 @@
 (setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %11TODO %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-agenda-todo-ignore-deadlines nil)
-(setq org-agenda-files (list zr/organizer-file zr/tickler-file "~/org/calendar.org"))
+(setq org-agenda-files (list zr/organizer-file zr/tickler-file))
 (setq org-default-notes-file zr/refile-file)
 (setq org-adapt-indentation t)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
@@ -341,6 +327,7 @@
           (todo "INTR" nil)
           (todo "PROG" nil)
           (todo "NEXT" nil)
+          (todo "WAIT" nil)
           (tags "+assorted+TODO=\"NEXT\""
                 ((org-agenda-overriding-header "Next Assorted"))))
          nil)))

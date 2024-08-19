@@ -9,8 +9,6 @@
 (require 'gotest)
 ;;(require 'ttest)
 
-(add-hook 'go-mode-hook 'lsp-deferred)
-(add-hook 'go-ts-mode-hook 'lsp-deferred)
 ;;(setq lsp-gopls-staticcheck t)
 (setq gofmt-command "goimports")
 

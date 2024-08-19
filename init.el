@@ -88,7 +88,17 @@
 
 (elpaca-wait)
 
+;; (keymap-set yaml-pro-ts-mode-map "C-M-n" #'yaml-pro-ts-next-subtree) ; was forward-list
+;; (keymap-set yaml-pro-ts-mode-map "C-M-p" #'yaml-pro-ts-prev-subtree) ; was backward-list
+;; (keymap-set yaml-pro-ts-mode-map "C-M-u" #'yaml-pro-ts-up-level)     ; was backward-up-list
+;; (keymap-set yaml-pro-ts-mode-map "C-M-d" #'yaml-pro-ts-down-level)   ; was down-list
 
+;; (defvar-keymap my/yaml-pro/tree-jump-repeat-map
+;;   :repeat t
+;;   "n" #'yaml-pro-ts-next-subtree
+;;   "p" #'yaml-pro-ts-prev-subtree
+;;   "u" #'yaml-pro-ts-up-level
+;;   "d" #'yaml-pro-ts-down-level)
 ;;; Emacs Setup
 
 (defvar zr/clean-whitespace-on-save t)
@@ -218,6 +228,24 @@
 (use-package org-journal)
 (use-package org-download)
 
+(use-package org-caldav
+  :config
+  ;; URL of the caldav server
+  (setq org-caldav-url "https://posteo.de:8443/calendars/zacromero/")
+
+  ;; calendar ID on server
+  (setq org-caldav-calendar-id "default")
+
+  ;; Org filename where new entries from calendar stored
+  (setq org-caldav-inbox "~/org-workspace/calendar.org")
+
+  ;; Additional Org files to check for calendar events
+  (setq org-caldav-files nil)
+
+  ;; Usually a good idea to set the timezone manually
+  (setq org-icalendar-timezone "Europe/Istanbul")
+  )
+
 (require 'org-capture)
 (require 'org-agenda)
 (require 'org-clock)
@@ -235,7 +263,7 @@
   :config
   (setq nrepl-log-messages t)
   (setq lsp-enable-completion-at-point nil)
-  (setq prelude-clojure-mode-hook 'prelude-clojure-mode-defaults)
+  ;; (setq prelude-clojure-mode-hook nil)
   :hook ((clojure-mode . lsp)
          (clojurescript-mode . lsp)
          (clojurec-mode . lsp))
@@ -299,11 +327,19 @@
   (setq graphviz-dot-indent-width 4))
 (use-package markdown-mode)
 (use-package yaml-mode)
+(add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
+(add-hook 'yaml-ts-mode-hook #'yaml-pro-ts-mode)
+(add-hook 'yaml-mode-hook #'yaml-pro-ts-mode)
 (use-package json-mode)
 (use-package graphql-mode)
 (use-package dockerfile-mode)
 (use-package csv-mode)
 (use-package mustache)
+(use-package polymode)
+(use-package poly-markdown)
+
+
+
 
 ;; JS Setup
 (setq js-indent-level 2)
@@ -423,6 +459,9 @@
 
 
 ;;; Tools ;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package heap)
+(use-package parse-csv
+  :elpaca (:host github :repo "mrc/el-csv" :files ("dist" "*.el")))
 (use-package chatgpt-shell
   :ensure t
   :custom
@@ -431,10 +470,15 @@
       (auth-source-pick-first-password :host "api.openai.com")))))
 (use-package eglot
   :hook ((go-ts-mode . eglot-ensure)
+         (go-mode . eglot-ensure)
          (tsx-ts-mode . eglot-ensure)
          (typescript-mode . eglot-ensure)
          (js-mode . eglot-ensure)))
-(add-to-list 'load-path "/opt/homebrew/share/emacs/site-lisp/mu4e")
+(add-to-list 'load-path "/Users/zromero/dev/emacs/mu-1.10.0/build/mu4e")
+
+;; (use-package p-search
+;;   :elpaca (:host github :repo "zkry/p-search"))
+
 (use-package copilot
   :elpaca (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
   :ensure t
@@ -451,6 +495,7 @@
   (setq rg-executable "/opt/homebrew/bin/rg"))
 (use-package magit)
 (use-package projectile)
+(use-package debbugs)
 
 (use-package consult
   ;; Replace bindings. Lazily loaded due by `use-package'.
@@ -606,8 +651,13 @@
 
 
 ;;; Utilities ;;;;;;;;;;;;;;;;;;
+(use-package ht)
+(use-package llm
+  :elpaca
+  (:host github :repo "https://github.com/ahyatt/llm.git"))
 (use-package system-packages)
 (use-package diminish)
+(use-package memoize)
 (use-package request)
 (use-package which-key
   :diminish which-key-mode
@@ -745,7 +795,26 @@
   (setq ef-themes-mixed-fonts t
         ef-themes-variable-pitch-ui t)
   :config
-  (ef-themes-select 'ef-bio))
+  ;; (ef-themes-select 'ef-light)
+  )
+
+(use-package modus-themes
+  :config
+  (modus-themes-select 'modus-operandi)
+  )
+
+(use-package elfeed
+  :config
+  (setq elfeed-feeds
+        '("https://planet.emacslife.com/atom.xml"
+          "https://jvns.ca/atom.xml"
+          "https://factorio.com/blog/rss"
+          "https://fly.io/blog/feed.xml"
+          "http://feeds.feedburner.com/ThePragmaticEngineer"
+          "https://batsov.com/atom.xml"
+          "https://danluu.com/atom.xml"
+          "https://deliberate-software.com/index.xml")))
+;; (load-theme 'leuven)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Custom Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -758,6 +827,45 @@
    (lambda (key _value)
      (file-notify-rm-watch key))
    file-notify-descriptors))
+
+(defun pdf-print-buffer-with-faces (&optional filename)
+    "Print file in the current buffer as pdf, including font, color, and
+underline information.  This command works only if you are using a window system,
+so it has a way to determine color values.
+
+C-u COMMAND prompts user where to save the Postscript file (which is then
+converted to PDF at the same location."
+    (interactive (list (if current-prefix-arg
+                           (ps-print-preprint 4)
+                         (concat (file-name-sans-extension (buffer-file-name))
+                                 ".ps"))))
+    (ps-print-with-faces (point-min) (point-max) filename)
+    (shell-command (concat "ps2pdf " filename))
+    (delete-file filename)
+    (message "Deleted %s" filename)
+    (message "Wrote %s" (concat (file-name-sans-extension filename) ".pdf"))
+    (concat (file-name-sans-extension filename) ".pdf"))
+
+(defun dwim-shell-commands-create-pdf (out-filename)
+  "Create joined PDF."
+  (interactive "sFilename:")
+  (let ((pdf-names))
+    (dwim-shell-command-foreach
+     (lambda (f)
+       (with-current-buffer (find-file-noselect f)
+         (push (call-interactively #'pdf-print-buffer-with-faces) pdf-names))))
+    (shell-command
+     (format "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=%s.pdf %s"
+             out-filename
+             (string-join pdf-names " ")))))
+
+(defun dwim-shell-commands-join-pdf (name)
+  "Duplicate file(s)."
+  (interactive "sFilename:")
+  (dwim-shell-command-on-marked-files
+   "Duplicate file(s)."
+   (format "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=%s.pdf <<*>>" name)
+   :utils "cp"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -833,7 +941,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;; Path
-(defconst my/home-directory "/Users/zachary.romero")
+(defconst my/home-directory "/Users/zromero")
 (setenv "PATH"
         (concat
          (getenv "PATH")
@@ -842,13 +950,12 @@
          (concat ":" my/home-directory "/.local/bin")
          ":/usr/local/go/bin"
          ":/usr/local/bin"
-         ":/Users/zachary.romero/Library/Python/3.9/bin"))
-(setenv "GOPRIVATE" "github.com/travelaudience/")
+         ":/Users/zromero/Library/Python/3.9/bin"))
 (setenv "GOPROXY" "direct")
 (setenv "PURE_GIT_PULL" "0")
 (setenv "GOSUMDB" "off")
-(setenv "GOPATH" "/Users/zachary.romero/go")
-(setenv "GOBIN" "/Users/zachary.romero/go/bin")
+(setenv "GOPATH" "/Users/zromero/go")
+(setenv "GOBIN" "/Users/zromero/go/src")
 (setenv "MANPAGER" "cat")
 (setenv "PAGER" "cat")
 
@@ -864,13 +971,14 @@
 ;;; External configuration ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (elpaca-wait)
-(add-to-list 'load-path "~/dev/emacs/bp")
-(require 'bp)
+;; (add-to-list 'load-path "~/dev/emacs/bp")
+;; (require 'bp)
 (load-file "~/.emacs.d/init-org.el")
 (load-file "~/.emacs.d/init-js.el")
+(load-file "~/.emacs.d/colemak-russian.el")
 (load-file "~/.emacs.d/init-go.el")
 (load-file "~/.emacs.d/init-mu4e.el")
-(load-file "~/.emacs.d/colemak-russian.el")
+(add-to-list 'load-path "~/dev/emacs/p-search")
 
 (set-face-attribute 'default nil :family "Berkeley Mono")
 
@@ -880,7 +988,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
-'(calendar-holidays
+ '(calendar-holidays
    '((holiday-fixed 1 1 "New Year's Day")
      (holiday-float 1 1 3 "Martin Luther King Day")
      (holiday-fixed 2 2 "Groundhog Day")
@@ -949,91 +1057,6 @@
                             (/ calendar-daylight-savings-ends-time
                                (float 60))
                             calendar-daylight-time-zone-name)))))
- '(connection-local-criteria-alist
-   '(((:application tramp :machine "localhost")
-      tramp-connection-local-darwin-ps-profile)
-     ((:application tramp :machine "MacBook-Pro.local")
-      tramp-connection-local-darwin-ps-profile)
-     ((:application tramp)
-      tramp-connection-local-default-system-profile tramp-connection-local-default-shell-profile)
-     ((:application eshell)
-      eshell-connection-default-profile)))
- '(connection-local-profile-alist
-   '((tramp-connection-local-darwin-ps-profile
-      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,uid,user,gid,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state=abcde" "-o" "ppid,pgid,sess,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etime,pcpu,pmem,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (euid . number)
-       (user . string)
-       (egid . number)
-       (comm . 52)
-       (state . 5)
-       (ppid . number)
-       (pgrp . number)
-       (sess . number)
-       (ttname . string)
-       (tpgid . number)
-       (minflt . number)
-       (majflt . number)
-       (time . tramp-ps-time)
-       (pri . number)
-       (nice . number)
-       (vsize . number)
-       (rss . number)
-       (etime . tramp-ps-time)
-       (pcpu . number)
-       (pmem . number)
-       (args)))
-     (tramp-connection-local-busybox-ps-profile
-      (tramp-process-attributes-ps-args "-o" "pid,user,group,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "stat=abcde" "-o" "ppid,pgid,tty,time,nice,etime,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (user . string)
-       (group . string)
-       (comm . 52)
-       (state . 5)
-       (ppid . number)
-       (pgrp . number)
-       (ttname . string)
-       (time . tramp-ps-time)
-       (nice . number)
-       (etime . tramp-ps-time)
-       (args)))
-     (tramp-connection-local-bsd-ps-profile
-      (tramp-process-attributes-ps-args "-acxww" "-o" "pid,euid,user,egid,egroup,comm=abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" "-o" "state,ppid,pgid,sid,tty,tpgid,minflt,majflt,time,pri,nice,vsz,rss,etimes,pcpu,pmem,args")
-      (tramp-process-attributes-ps-format
-       (pid . number)
-       (euid . number)
-       (user . string)
-       (egid . number)
-       (group . string)
-       (comm . 52)
-       (state . string)
-       (ppid . number)
-       (pgrp . number)
-       (sess . number)
-       (ttname . string)
-       (tpgid . number)
-       (minflt . number)
-       (majflt . number)
-       (time . tramp-ps-time)
-       (pri . number)
-       (nice . number)
-       (vsize . number)
-       (rss . number)
-       (etime . number)
-       (pcpu . number)
-       (pmem . number)
-       (args)))
-     (tramp-connection-local-default-shell-profile
-      (shell-file-name . "/bin/sh")
-      (shell-command-switch . "-c"))
-     (tramp-connection-local-default-system-profile
-      (path-separator . ":")
-      (null-device . "/dev/null"))
-     (eshell-connection-default-profile
-      (eshell-path-env-list))))
- '(holiday-bahai-holidays nil)
  '(connection-local-criteria-alist
    '(((:application tramp :machine "localhost")
       tramp-connection-local-darwin-ps-profile)
@@ -1118,10 +1141,20 @@
       (null-device . "/dev/null"))
      (eshell-connection-default-profile
       (eshell-path-env-list))))
- '(js-indent-level 2))
+ '(ede-project-directories '("/Users/zromero/dev/emacs/text-sage"))
+ '(fence-edit-blocks
+   '(("^.*gql`$" "^[[:blank:]]*`;?$" graphql)
+     ("^[[:blank:]]*\\(?:```\\|~~~\\)[ ]?\\([^[:space:]]+\\|{[^}]*}\\)?\\(?:[[:space:]]*?\\)$" "^[[:blank:]]*\\(?:```\\|~~~\\)\\s *?$" 1)))
+ '(holiday-bahai-holidays nil)
+ '(js-indent-level 2)
+ '(tiktoken-cache-dir "~/.emacs.d/")
+ '(yaml-pro-format-features
+   '(reduce-newlines document-separator-own-line oneline-flow block-formatting reduce-spaces bm-fn-next-line clean-doc-end remove-spaces-before-comments expand-long-flow single-to-double indent)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(put 'list-timers 'disabled nil)
+(put 'list-threads 'disabled nil)
