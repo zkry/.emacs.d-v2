@@ -224,9 +224,16 @@
   (setq org-pomodoro-start-sound (file-truename "~/Documents/alert2.wav"))
   (setq org-pomodoro-finished-sound (file-truename "~/Documents/alert1.wav"))
   (setq org-pomodoro-overtime-sound (file-truename "~/Documents/alert1.wav"))
-  (setq org-pomodoro-long-break-sound (file-truename "~/Documents/alert1.wav")))
+  (setq org-pomodoro-long-break-sound (file-truename "~/Documents/alert1.wav"))
+  (setq org-pomodoro-short-break-sound (file-truename "~/Documents/alert1.wav")))
+
+
 (use-package org-journal)
 (use-package org-download)
+
+(use-package org-contrib
+  :config
+  (require 'org-depend))
 
 (use-package org-caldav
   :config
@@ -246,6 +253,90 @@
   (setq org-icalendar-timezone "Europe/Istanbul")
   )
 
+(use-package
+  org-roam
+  :config
+  (setq org-roam-v2-ack t)
+  (setq org-roam-directory "~/org-workspace/roam"))
+
+(use-package org-noter
+  :ensure t
+  :demand t
+  :config
+  (setq org-noter-notes-search-path        '("~/Books/notes"))
+  (setq org-noter-default-notes-file-names '("notes.org")))
+
+(use-package denote
+  :ensure t
+  :hook (dired-mode . denote-dired-mode)
+  :bind
+  (("C-c n n" . denote)
+   ("C-c n r" . denote-rename-file)
+   ("C-c n l" . denote-link)
+   ("C-c n b" . denote-backlinks)
+   ("C-c n d" . denote-dired)
+   ("C-c n g" . consult-denote-grep)
+   ("C-c n f" . consult-denote-find)
+   ("C-c n a" . zr/denote-attatch))
+  :config
+  (setq denote-directory (expand-file-name "~/org-workspace/notes/"))
+  (setq denote-infer-keywords t)
+  (denote-rename-buffer-mode 1))
+
+(use-package consult-denote)
+
+(defun zr-location-latlon-corelocationcli ()
+  "Return (LAT . LON) using CoreLocationCLI on macOS."
+  (interactive)
+  (let* ((out (string-trim (shell-command-to-string "CoreLocationCLI -once -format '%latitude %longitude'")))
+         (parts (split-string out " +" t)))
+    (when (= (length parts) 2)
+      (let ((lat (string-to-number (nth 0 parts)))
+            (lon (string-to-number (nth 1 parts))))
+        (when (called-interactively-p 'any)
+          (message "lat=%s lon=%s" lat lon))
+        (cons lat lon)))))
+
+(defun zr-insert-location-to-journal ()
+  (save-excursion
+    (goto-char (point-min))
+    (pcase-let ((`(,lat . ,lon) (zr-location-latlon-corelocationcli)))
+      (insert (format ":PROPERTIES:\n:LOCATION: %f,%f\n:END:\n" lat lon)))))
+
+(add-hook 'denote-journal-hook #'zr-insert-location-to-journal)
+
+
+(use-package denote-journal
+  :ensure (:host github :repo "protesilaos/denote-journal")
+  :commands ( denote-journal-new-entry
+              denote-journal-new-or-existing-entry
+              denote-journal-link-or-create-entry )
+  :hook (calendar-mode . denote-journal-calendar-mode)
+  :bind
+  (("C-c n t" . denote-journal-new-or-existing-entry)
+   ("C-c n j" . denote-journal-new-entry))
+  :config
+  ;; Use the "journal" subdirectory of the `denote-directory'.  Set this
+  ;; to nil to use the `denote-directory' instead.
+  (setq denote-journal-directory
+        (expand-file-name "journal" denote-directory))
+  ;; Default keyword for new journal entries. It can also be a list of
+  ;; strings.
+  (setq denote-journal-keyword "journal")
+  ;; Read the doc string of `denote-journal-title-format'.
+  (setq denote-journal-title-format 'day-date-month-year))
+
+(defun zr/denote-attatch ()
+  (interactive)
+  (let* ((file (read-file-name "File to attach: " "~/Downloads/"))
+         (nondir (file-name-nondirectory file))
+         (new-filename (file-name-concat "~/org-workspace/notes/reference/"
+                                         nondir)))
+    (f-copy file new-filename)
+    (pcase-let* ((`(,title ,keywords ,signature ,date ,identifier)
+                  (denote--rename-get-file-info-from-prompts-or-existing new-filename)))
+      (denote-rename-file new-filename title keywords signature date identifier))))
+
 (require 'org-capture)
 (require 'org-agenda)
 (require 'org-clock)
@@ -253,6 +344,14 @@
 (require 'org-habit)
 (require 'org-duration)
 (require 'org-protocol)
+
+(use-package org-novelist
+  :elpaca
+  (:host github :repo "sympodius/org-novelist" :files ("dist" "*.el")))
+(use-package org-contacts
+  :config
+  (setq org-contacts-files '("~/org-workspace/apps/contacts.org")))
+
 
 ;;; Programming Modes ;;;;;;;;;;;;;;;;;;
 
@@ -273,7 +372,7 @@
 (use-package cider
   :config
   (setq nrepl-log-messages t)
-  (setq prelude-cider-repl-mode-hook 'prelude-cider-repl-mode-defaults)
+  ;; (setq prelude-cider-repl-mode-hook 'prelude-cider-repl-mode-defaults)
   :hook ((cider-mode . eldoc-mode))
   :init
   (add-hook 'cider-repl-mode-hook
@@ -284,7 +383,6 @@
 (use-package racket-mode)
 (use-package terraform-mode)
 (use-package feature-mode)
-(use-package protobuf-mode)
 (use-package go-mode
   :hook (before-save . gofmt-before-save))
 (use-package go-sea
@@ -328,7 +426,7 @@
 (use-package markdown-mode)
 (use-package yaml-mode)
 (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-ts-mode))
-(add-hook 'yaml-ts-mode-hook #'yaml-pro-ts-mode)
+;; (add-hook 'yaml-ts-mode-hook #'yaml-pro-ts-mode)
 (add-hook 'yaml-mode-hook #'yaml-pro-ts-mode)
 (use-package json-mode)
 (use-package graphql-mode)
@@ -459,6 +557,18 @@
 
 
 ;;; Tools ;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defvar zr/books-directory "~/Books")
+
+(use-package nov
+  :config
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  (setq nov-save-place-file (file-name-concat zr/books-directory "nov-places"))
+  (add-hook 'nov-mode-hook (lambda () (text-scale-set 2)))
+  )
+
+(use-package parsebib)
+(use-package olivetti)
 (use-package heap)
 (use-package parse-csv
   :elpaca (:host github :repo "mrc/el-csv" :files ("dist" "*.el")))
@@ -474,25 +584,34 @@
          (tsx-ts-mode . eglot-ensure)
          (typescript-mode . eglot-ensure)
          (js-mode . eglot-ensure)))
+
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               '(text-mode . ("harper-ls" "--stdio"))))
+
 (add-to-list 'load-path "/Users/zromero/dev/emacs/mu-1.10.0/build/mu4e")
 
 ;; (use-package p-search
 ;;   :elpaca (:host github :repo "zkry/p-search"))
+(add-to-list 'load-path "~/dev/emacs/p-search")
 
-(use-package copilot
-  :elpaca (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
-  :ensure t
-  :config
-  (add-hook 'prog-mode-hook 'copilot-mode)
-  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
-  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
+;(use-package copilot
+;  :elpaca (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
+;  :ensure t
+;  :config
+;  (add-hook 'prog-mode-hook 'copilot-mode)
+;  (define-key copilot-completion-map (kbd "<tab>") 'copilot-accept-completion)
+;  (define-key copilot-completion-map (kbd "TAB") 'copilot-accept-completion))
 (use-package ripgrep
   :config
   (setq ripgrep-executable "/usr/local/bin/rg"))
 (use-package rg
   :init
   (rg-enable-default-bindings)
-  (setq rg-executable "/opt/homebrew/bin/rg"))
+  (setq rg-executable "/usr/local/bin/rg"))
+(use-package jsonrpc)
+(use-package eldoc)
+(use-package transient)
 (use-package magit)
 (use-package projectile)
 (use-package debbugs)
@@ -575,6 +694,7 @@
                    #'consult-completion-in-region
                  #'completion--in-region)
                args))))
+
 ;; (use-package embark
 ;;   :ensure t
 ;;   :bind
@@ -626,21 +746,25 @@
   :init
   (setq aw-keys '(?a ?r ?s ?t ?n ?e ?i ?o)))
 
-;; TODO
 ;; (use-package awqat
-;;   :straight (awqat :type git :host github :repo "zkry/awqat")
-;;   :config
-;;   ;; istanbul
-;;   ;; (setq calendar-latitude 41.013
-;;   ;;       calendar-longitude 28.946)
-;;   (setq calendar-latitude 33.44
-;;         calendar-longitude -112.07)
-;;   (setq awqat-asr-hanafi nil)
-;;   (awqat-set-preset-diyanet)
-;;   (setq awqat-fajr-angle -20.70)
-;;   (setq awqat-isha-angle -16.3)
-;;   (setq awqat-prayer-safety-offsets
-;;         '(0.0 0.0 7.0 -9.0 0.0 0.0)))
+;;   :ensure t
+;;   :vc (:url "https://github.com/zkry/awqat"
+;;        :rev :newest))
+
+;; TODO
+(use-package awqat
+  :config
+
+  ;; istanbul, sancaktepe
+  (setq calendar-latitude 40.993878
+        calendar-longitude 29.229639)
+  (setq awqat-asr-hanafi nil)
+  (awqat-set-preset-diyanet)
+  (setq awqat-fajr-angle -18.00)
+  (setq awqat-isha-angle -17.00)
+  (setq awqat-sunrise-sunset-angle -2.0)
+  (setq awqat-prayer-safety-offsets
+        '(0.0 0.0 5.0 6.0 0.0 0.0)))
 
 (use-package emms
   :init
@@ -651,6 +775,9 @@
 
 
 ;;; Utilities ;;;;;;;;;;;;;;;;;;
+(require 'epa)
+(setq epa-pinentry-mode 'loopback)
+
 (use-package ht)
 (use-package llm
   :elpaca
@@ -674,6 +801,22 @@
 ;;          (typescript-ts-mode . combobulate-mode)
 ;;          (tsx-ts-mode . combobulate-mode)))
 (use-package tree-sitter-langs :ensure t)
+(setq treesit-language-source-alist
+   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (cmake "https://github.com/uyha/tree-sitter-cmake")
+     (css "https://github.com/tree-sitter/tree-sitter-css")
+     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+     (go "https://github.com/tree-sitter/tree-sitter-go")
+     (html "https://github.com/tree-sitter/tree-sitter-html")
+     (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+     (json "https://github.com/tree-sitter/tree-sitter-json")
+     (make "https://github.com/alemuller/tree-sitter-make")
+     (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+     (python "https://github.com/tree-sitter/tree-sitter-python")
+     (toml "https://github.com/tree-sitter/tree-sitter-toml")
+     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+     (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 (use-package vertico
   :init
   (vertico-mode))
@@ -950,7 +1093,9 @@ converted to PDF at the same location."
          (concat ":" my/home-directory "/.local/bin")
          ":/usr/local/go/bin"
          ":/usr/local/bin"
-         ":/Users/zromero/Library/Python/3.9/bin"))
+         ":/Users/zromero/Library/Python/3.9/bin"
+         ":/usr/local/texlive/2024basic/bin/universal-darwin"))
+
 (setenv "GOPROXY" "direct")
 (setenv "PURE_GIT_PULL" "0")
 (setenv "GOSUMDB" "off")
@@ -977,10 +1122,10 @@ converted to PDF at the same location."
 (load-file "~/.emacs.d/init-js.el")
 (load-file "~/.emacs.d/colemak-russian.el")
 (load-file "~/.emacs.d/init-go.el")
-(load-file "~/.emacs.d/init-mu4e.el")
-(add-to-list 'load-path "~/dev/emacs/p-search")
+;; (load-file "~/.emacs.d/init-mu4e.el")
+(add-to-list 'load-path "/Users/zacharyromero/dev/emacs/p-search")
 
-(set-face-attribute 'default nil :family "Berkeley Mono")
+;; (set-face-attribute 'default nil :family "Berkeley Mono")
 
 ;;; init.el ends here
 (custom-set-variables
@@ -1025,9 +1170,6 @@ converted to PDF at the same location."
          (append
           (holiday-islamic 1 10 "Ashura")
           (holiday-islamic 3 12 "Mulad-al-Nabi")
-          (holiday-islamic 7 26 "Shab-e-Mi'raj")
-          (holiday-islamic 8 15 "Shab-e-Bara't")
-          (holiday-islamic 9 27 "Shab-e Qadr")
           (holiday-islamic 10 1 "Id-al-Fitr")
           (holiday-islamic 12 10 "Id-al-Adha")))
      (if calendar-bahai-all-holidays-flag
@@ -1147,6 +1289,38 @@ converted to PDF at the same location."
      ("^[[:blank:]]*\\(?:```\\|~~~\\)[ ]?\\([^[:space:]]+\\|{[^}]*}\\)?\\(?:[[:space:]]*?\\)$" "^[[:blank:]]*\\(?:```\\|~~~\\)\\s *?$" 1)))
  '(holiday-bahai-holidays nil)
  '(js-indent-level 2)
+ '(safe-local-variable-values
+   '((geiser-repl-per-project-p . t)
+     (eval with-eval-after-load 'yasnippet
+           (let
+               ((guix-yasnippets
+                 (expand-file-name "etc/snippets/yas"
+                                   (locate-dominating-file default-directory ".dir-locals.el"))))
+             (unless
+                 (member guix-yasnippets yas-snippet-dirs)
+               (add-to-list 'yas-snippet-dirs guix-yasnippets)
+               (yas-reload-all))))
+     (eval with-eval-after-load 'tempel
+           (if
+               (stringp tempel-path)
+               (setq tempel-path
+                     (list tempel-path)))
+           (let
+               ((guix-tempel-snippets
+                 (concat
+                  (expand-file-name "etc/snippets/tempel"
+                                    (locate-dominating-file default-directory ".dir-locals.el"))
+                  "/*.eld")))
+             (unless
+                 (member guix-tempel-snippets tempel-path)
+               (add-to-list 'tempel-path guix-tempel-snippets))))
+     (eval setq-local guix-directory
+           (locate-dominating-file default-directory ".dir-locals.el"))
+     (eval add-to-list 'completion-ignored-extensions ".go")
+     (etags-regen-ignores "test/manual/etags/")
+     (etags-regen-regexp-alist
+      (("c" "objc")
+       "/[ \11]*DEFVAR_[A-Z_ \11(]+\"\\([^\"]+\\)\"/\\1/" "/[ \11]*DEFVAR_[A-Z_ \11(]+\"[^\"]+\",[ \11]\\([A-Za-z0-9_]+\\)/\\1/"))))
  '(tiktoken-cache-dir "~/.emacs.d/")
  '(yaml-pro-format-features
    '(reduce-newlines document-separator-own-line oneline-flow block-formatting reduce-spaces bm-fn-next-line clean-doc-end remove-spaces-before-comments expand-long-flow single-to-double indent)))
@@ -1155,6 +1329,7 @@ converted to PDF at the same location."
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(button ((t (:foreground "#3548cf"))))
+ '(org-link ((t (:underline nil)))))
 (put 'list-timers 'disabled nil)
 (put 'list-threads 'disabled nil)

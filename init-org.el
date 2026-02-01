@@ -37,37 +37,53 @@
 (defun zr/org-file (path)
   (concat zr/org-directory path))
 
-(use-package org-roam
-  :ensure t
-  :custom
-  (org-roam-directory (file-truename "~/org-workspace/roam"))
-  :bind (("C-c n l" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n g" . org-roam-graph)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture)
-         ;; Dailies
-         ("C-c n j" . org-roam-dailies-capture-today)
-         :map org-roam-mode-map
-         ("C-c n j" . org-journal-new-entry)
-         ("C-c n a t" . org-roam-dailies-capture-today)
-         ("C-c n a y" . org-roam-dailies-capture-yesterday)
-         ("C-c n a m" . org-roam-dailies-capture-tomorrow)
-         ("C-c n a w" . org-roam-dailies-capture-this-week)
-         ("C-c n l" . org-roam)
-         ("C-c n f" . org-roam-find-file)
-         ("C-c n g" . org-roam-graph))
-  :config
-  (setq org-roam-v2-ack t)
-  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-  (org-roam-db-autosync-mode)
-  (org-roam-setup))
+;; (use-package org-roam
+;;   :ensure t
+;;   :custom
+;;   (org-roam-directory (file-truename "~/org-workspace/roam"))
+;;   :bind (("C-c n l" . org-roam-buffer-toggle)
+;;          ("C-c n f" . org-roam-node-find)
+;;          ("C-c n g" . org-roam-graph)
+;;          ("C-c n i" . org-roam-node-insert)
+;;          ("C-c n c" . org-roam-capture)
+;;          ;; Dailies
+;;          ("C-c n j" . org-roam-dailies-capture-today)
+;;          :map org-roam-mode-map
+;;          ("C-c n j" . org-journal-new-entry)
+;;          ("C-c n a t" . org-roam-dailies-capture-today)
+;;          ("C-c n a y" . org-roam-dailies-capture-yesterday)
+;;          ("C-c n a m" . org-roam-dailies-capture-tomorrow)
+;;          ("C-c n a w" . org-roam-dailies-capture-this-week)
+;;          ("C-c n l" . org-roam)
+;;          ("C-c n f" . org-roam-find-file)
+;;          ("C-c n g" . org-roam-graph))
+;;   :config
+;;   (setq org-roam-v2-ack t)
+;;   (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+;;   (org-roam-db-autosync-mode)
+;;   (org-roam-setup))
 
+(use-package org-present)
+(eval-after-load "org-present"
+  '(progn
+     (add-hook 'org-present-mode-hook
+               (lambda ()
+                 (org-present-big)
+                 (org-display-inline-images)
+                 (org-present-hide-cursor)
+                 (org-present-read-only)))
+     (add-hook 'org-present-mode-quit-hook
+               (lambda ()
+                 (org-present-small)
+                 (org-remove-inline-images)
+                 (org-present-show-cursor)
+                 (org-present-read-write)))))
 
-(defconst zr/refile-file (zr/org-file "capture.org"))
+(defconst zr/refile-file (zr/org-file "capture2.org"))
 (defconst zr/notes-file (zr/org-file "notes.org"))
 (defconst zr/organizer-file (zr/org-file "gtd.org"))
-(defconst zr/tickler-file (zr/org-file "calendar.org"))
+(defconst zr/calendar-file (zr/org-file "calendar.org"))
+(defconst zr/tickler-file (zr/org-file "tickler.org"))
 
 (defun zr/open-init ()
   (interactive)
@@ -201,7 +217,7 @@
 (define-key org-mode-map (kbd "C-c C-x C-m") #'org-pomodoro)
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "WAIT(w)" "|" "DONE(d)" "CANCELLED(c)")))
+      '((sequence "TODO(t)" "NEXT(n)" "WAIT(w@)" "|" "DONE(d!)" "CANCELLED(c@)")))
 
 ;; Show the daily agenda by default
 (setq org-agenda-span 'day)
@@ -217,7 +233,6 @@
 
 (setq org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
 
-;; TODO: fixme
 (setq org-capture-templates
       '(("t" "Todo" entry (file zr/refile-file)
          "* TODO %?\n   %U\n   %l" :empty-lines 1)
@@ -228,72 +243,44 @@
         ("N" "Note with Clipboard" entry (file zr/refile-file)
          "* %?\n   %U\n   %c" :empty-lines 1)
         ("r" "Reading List" entry (file+headline zr/organizer-file "Reading List")
-         "* TODO %?\n   %U\n   %l" :empty-lines 1)))
+         "* TODO %?\n   %U\n   %l" :empty-lines 1)
+        ("c" "Contacts" entry (file+headline "~/org-workspace/apps/contacts.org" "Inbox")
+         "* %(org-contacts-template-name)
+:PROPERTIES:
+:EMAIL: %(org-contacts-template-email)
+:END:")))
 
 (setq org-adapt-indentation t)
 (setq org-columns-default-format "%80ITEM(Task) %11TODO %10Effort(Effort){:} %10CLOCKSUM")
 (setq org-agenda-todo-ignore-deadlines nil)
-(setq org-agenda-files (list zr/organizer-file zr/tickler-file))
+(setq org-agenda-files (list zr/organizer-file zr/tickler-file zr/calendar-file))
 (setq org-default-notes-file zr/refile-file)
 (setq org-adapt-indentation t)
 (setq org-refile-targets '((org-agenda-files :maxlevel . 9)))
 (setq org-log-into-drawer t)
+(setq org-log-done 'time)
 (setq org-agenda-include-diary t)
+(setq org-log-into-drawer t)
 
-(add-hook 'org-mode-hook
-          (lambda ()
-            (local-set-key (kbd "s-<up>") #'org-move-subtree-up)
-            (local-set-key (kbd "s-<down>") #'org-move-subtree-down)
-            (local-set-key (kbd "<M-S-return>") #'org-insert-todo-heading)
-            (local-set-key (kbd "<C-S-return>") #'org-insert-todo-heading-respect-content)))
+;;; Babel
 
-
-(require 'org-faces)
-
-(dolist (face '((org-level-1 . 1.5)
-                (org-level-2 . 1.3)
-                (org-level-3 . 1.2)
-                (org-level-4 . 1.1)
-                (org-level-5 . 1.15)
-                (org-level-6 . 1.15)
-                (org-level-7 . 1.15)
-                (org-level-8 . 1.15)))
-  (set-face-attribute (car face) nil :font "Hack" :weight 'medium :height (cdr face)))
-(set-face-attribute 'org-document-title nil :font "Iosevka Aile" :weight 'bold :height 1.8)
-(set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-(set-face-attribute 'org-table nil :inherit 'fixed-pitch)
-(set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-(set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-(set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-(set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-(set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-(set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-
-(defun org-clear-checklists-items-in-subtree ()
-  (interactive)
-  (let ((pt (point)))
-    (org-narrow-to-subtree)
-    (goto-char (point-min))
-    (while (search-forward "- [X]" nil t)
-      (backward-char 2)
-      (delete-char 1)
-      (insert " "))
-    (widen)
-    (goto-char pt)))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
- '((dot . t)
-   (go . t)
-   (java . t)
-   (shell . t)
-   (ruby . t)
-   (latex . t)
+ '((shell . t)
    (scheme . t)
-   (lilypond . t)
-   (R . t)
-   (latex . t))) ; this line activates dot
+   (gnuplot . t)))
 (setq org-confirm-babel-evaluate nil)
+(org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)))
+
+
+;;; Exporting
+
+(setq org-src-fontify-natively t)
+(setq org-latex-listing t)
+
+
+;;; Agenda
 
 (defun org-current-is-todo ()
   (string= "TODO" (org-get-todo-state)))
@@ -321,95 +308,61 @@
          (future-scheduled (and scheduled-time (time-less-p (current-time) scheduled-time))))
     (if future-scheduled skip nil)))
 
-(setq org-agenda-custom-commands
-      '(("n" "Agenda / INTR / PROG / NEXT"
-         ((agenda "" nil)
-          (todo "INTR" nil)
-          (todo "PROG" nil)
-          (todo "NEXT" nil)
-          (todo "WAIT" nil)
-          (tags "+assorted+TODO=\"NEXT\""
-                ((org-agenda-overriding-header "Next Assorted"))))
-         nil)))
+(defun org-agenda-skip-future-scheduled ()
+  (let* ((scheduled-time (org-get-scheduled-time (point)))
+         (current-date (org-today)))
+    (if (and scheduled-time
+             (> (time-to-days scheduled-time) current-date))
+        (save-excursion (or (outline-next-heading) (point-max)))
+      nil)))
 
-;; Old org agenda setup
-;; (setq org-agenda-custom-commands
-;;       (quote (("g" "GTD"
-;;                ((agenda "" nil)
-;;                 (tags-todo "gtd+assorted-@market-frozen"
-;;                            ((org-agenda-overriding-header "Tasks Backlog")
-;;                             (org-agenda-skip-function #'zac/org-skip-future-scheduled)))
-;;                                         ;(tags-todo "gtd-assorted/NEXT"
-;;                                         ;           ((org-agenda-overriding-header "Projects NEXT Tasks")
-;;                                         ;            (org-agenda-todo-ignore-scheduled t)))
-;;                 (tags-todo "gtd-assorted-@market-frozen/TODO"
-;;                            ((org-agenda-overriding-header "Project TODO Tasks")
-;;                             (org-agenda-todo-ignore-scheduled t)
-;;                             (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first)))
-;;                 (tags-todo "gtd+deepw-@market-frozen/TODO"
-;;                            ((org-agenda-overriding-header "Deep Work Candidates")
-;;                             (org-agenda-todo-ignore-scheduled t)
-;;                             (org-agenda-skip-function (lambda () (or (zac/org-skip-future-scheduled) (my-org-agenda-skip-all-siblings-but-first))))))))
-;;               ("w" "Work"
-;;                ((agenda "" nil)
-;;                 (tags-todo "+@office/TODO"
-;;                            ((org-agenda-overriding-header "TODO Tasks")
-;;                             (org-agenda-todo-ignore-scheduled t)
-;;                             (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first))))
-;;                ((org-agenda-tag-filter-preset '("+@office")))))))
+(setq org-agenda-skip-function 'org-agenda-skip-future-scheduled)
 
-;; TODO Find a better way to manage stuck projects. It seems like the 2nd level
-;;      header shouldn't have a TODO tag.
 (setq org-stuck-projects
-      '("+LEVEL=2+proj/-DONE-CANCELLED"
-        ("TODO" "NEXT")
+      '("+LEVEL=2-TODO=\"DONE\"-maybe-operational"
+        ("NEXT")
         nil
         ""))
 
-(setq org-plantuml-jar-path (expand-file-name "~/Downloads/plantuml-1.2023.1.jar"))
-(add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
-(org-babel-do-load-languages 'org-babel-load-languages '((plantuml . t)))
+(setq org-agenda-prefix-format
+      '((agenda . " %i %-12:c%?-12t% s") (todo . " %i %-12:c") (tags . " %i %-12:c") (search . " %i %-12:c")))
 
-(require 'ox-latex)
-(require 'ox-texinfo)
-(add-to-list 'org-latex-packages-alist '("" "minted"))
-(setq org-latex-listings 'minted)
+(setq org-agenda-custom-commands
+      '(("r" "Reading"
+         ((tags-todo "+reading"()))
+         nil)
+        ("n" "Agenda / INTR / PROG / NEXT"
+         ((agenda "" nil)
+          (tags-todo "-maybe+stratp+TODO=\"NEXT\""
+                     ((org-agenda-overriding-header "Strategic Plan")))
+          (tags-todo "-maybe+@focus+TODO=\"NEXT\""
+                     ((org-agenda-overriding-header "Focus Work Candidates")))
+          (tags-todo "-maybe+@light+TODO=\"NEXT\""
+                     ((org-agenda-overriding-header "Light Work")
+                      (org-agenda-prefix-format " %i %-12:c%?-12t% s")))
+          (tags-todo "-maybe+@home+TODO=\"NEXT\""
+                     ((org-agenda-overriding-header "At Home")))
+          (tags-todo "-maybe+@anytime+TODO=\"NEXT\""
+                     ((org-agenda-overriding-header "Anytime")))
+          (tags-todo "-maybe+@errands+TODO=\"NEXT\""
+                     ((org-agenda-overriding-header "Errands Outside")))
+          (stuck)
+          (todo "WAIT" nil
+                ((org-agenda-overriding-header "Waiting Tasks")))
+          (tags-todo "-maybe-@anytime-@home-@light-@errands-@focus+TODO=\"NEXT\"" nil))
+         nil)))
 
-(setq org-latex-pdf-process
-      '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-        "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
-        "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
 
-(setq org-src-fontify-natively t)
-(setq org-latex-listing t)
-
-(global-set-key (kbd "C-c l") #'org-store-link)
-
-(require 'org-download)
-(add-hook 'dired-mode-hook 'org-download-enable)
-(setq-default org-download-image-dir "./media")
-
-(setq org-id-link-to-org-use-id t)
-
+;;; Org Roam
 (add-to-list 'display-buffer-alist
                   '("\\*org-roam\\*"
                     (display-buffer-in-direction)
                     (direction . right)
                     (window-width . 0.33)
                     (window-height . fit-window-to-buffer)))
-(setq org-roam-directory (zr/org-file "roam"))
-
-(global-set-key (kbd "C-c n l") #'org-roam-buffer-toggle)
-(global-set-key (kbd "C-c n f") #'org-roam-node-find)
-(global-set-key (kbd "C-c n g") #'org-roam-graph)
-(global-set-key (kbd "C-c n i") #'org-roam-node-insert)
-(global-set-key (kbd "C-c n c") #'org-roam-capture)
-(global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
-(global-set-key (kbd "C-c n t") #'org-roam-dailies-find-today)
-(global-set-key (kbd "C-c n d") #'deft)
-(define-key org-mode-map (kbd "C-'") nil)
 
 
+;;; Org Journal
 (require 'org-journal)
 
 (setq org-journal-date-prefix "#+title: "
@@ -418,28 +371,19 @@
       org-journal-date-format "%A, %d %B %Y"
       org-journal-time-prefix  "** ")
 
-(use-package deft
-  :bind
-  (:map org-roam-mode-map
-   ("C-c n d" . deft))
-  :config
-  (setq deft-directory (zr/org-file "roam"))
-  (setq deft-use-filename-as-title t)
-  (setq deft-strip-summary-regexp ":PROPERTIES:\n\\(.+\n\\)+:END:\n#\\+title:")
-  :custom
-       (deft-recursive t)
-       (deft-use-filter-string-for-filename t)
-       (deft-default-extension "org")
-       (deft-directory org-roam-directory))
 
-(setq org-show-notification-handler #'message)
-(use-package org-anki
-  :bind
-  (:map org-mode-map
-        ("C-c f" . org-anki-sync-entry))
-  :init
-  (customize-set-variable 'org-anki-default-deck "org"))
+;;; Keybindings
+(global-set-key (kbd "C-c c") 'org-capture)
+(define-key org-mode-map (kbd "C-c C-x C-m") #'org-pomodoro)
+(define-key org-mode-map (kbd "<s-down>") #'org-move-subtree-down)
+(define-key org-mode-map (kbd "<s-up>") #'org-move-subtree-up)
+(global-set-key (kbd "C-c l") #'org-store-link)
+;; (global-set-key (kbd "C-c n l") #'org-roam-buffer-toggle)
+;; (global-set-key (kbd "C-c n f") #'org-roam-node-find)
+;; (global-set-key (kbd "C-c n g") #'org-roam-graph)
+;; (global-set-key (kbd "C-c n i") #'org-roam-node-insert)
+;; (global-set-key (kbd "C-c n c") #'org-roam-capture)
+;; (global-set-key (kbd "C-c n j") #'org-roam-dailies-capture-today)
+;; (global-set-key (kbd "C-c n t") #'org-roam-dailies-find-today)
 
-(provide 'init-org)
-
-;;; init-org.el ends here
+(define-key org-mode-map (kbd "C-'") nil)
